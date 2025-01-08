@@ -1,7 +1,24 @@
 package handlers
 
-// Метод: **POST**  
-// URL: **/api/v1/register**  
+import (
+	"log/slog"
+
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/services"
+	"github.com/EvansTrein/RESTful_exchangerServer/models"
+	"github.com/gin-gonic/gin"
+)
+
+func RegisterHandler(log *slog.Logger, auth services.AuthService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		log.Debug("RegisterHandler")
+		res, _ := auth.Register(models.RegisterRequest{})
+
+		ctx.JSON(200, gin.H{"Register": res})
+	}
+}
+
+// Метод: **POST**
+// URL: **/api/v1/register**
 // Тело запроса:
 // ```json
 // {
@@ -14,7 +31,7 @@ package handlers
 // Ответ:
 // • Успех: ```201 Created```
 // ```json
-// { 
+// {
 //   "message": "User registered successfully"
 // }
 // ```
@@ -28,6 +45,6 @@ package handlers
 
 // ▎Описание
 
-// Регистрация нового пользователя. 
+// Регистрация нового пользователя.
 // Проверяется уникальность имени пользователя и адреса электронной почты.
 // Пароль должен быть зашифрован перед сохранением в базе данных.
