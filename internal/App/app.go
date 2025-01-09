@@ -5,9 +5,8 @@ import (
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/server"
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/services"
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
+	servAuth "github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
+	servWallet "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages/postgres"
 )
 
@@ -15,8 +14,8 @@ type App struct {
 	server *server.HttpServer
 	log    *slog.Logger
 	conf   *config.Config
-	auth   services.AuthService
-	wallet services.WalletService
+	auth   *servAuth.Auth
+	wallet *servWallet.Wallet
 }
 
 func New(conf *config.Config, log *slog.Logger) *App {
@@ -27,9 +26,8 @@ func New(conf *config.Config, log *slog.Logger) *App {
 		panic(err)
 	}
 
-	auth := auth.New(log, db)
-	wallet := wallet.New(log, db)
-
+	auth := servAuth.New(log, db)
+	wallet := servWallet.New(log, db)
 
 	httpServer.InitRouters(auth, wallet)
 

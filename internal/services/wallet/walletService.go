@@ -1,4 +1,4 @@
-package wallet
+package services
 
 import (
 	"log/slog"

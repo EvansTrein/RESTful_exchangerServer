@@ -3,15 +3,18 @@ package handlers
 import (
 	"log/slog"
 
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/services"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
 
-func BalanceHandler(log *slog.Logger, wallet services.WalletService) gin.HandlerFunc {
+type balanceServ interface {
+	Balance(req models.BalanceRequest) (*models.BalanceResponse, error)
+}
+
+func BalanceHandler(log *slog.Logger, serv balanceServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.Debug("BalanceHandler")
-		res, _ := wallet.Balance(models.BalanceRequest{})
+		res, _ := serv.Balance(models.BalanceRequest{})
 
 		ctx.JSON(200, gin.H{"BalanceHandler": res})
 	}

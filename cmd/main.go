@@ -8,15 +8,13 @@ import (
 	"github.com/EvansTrein/RESTful_exchangerServer/pkg/logs"
 )
 
-var conf *config.Config
-var log *slog.Logger
-
-func init() {
-	conf = config.MustLoad()
-	log = logs.InitLog(conf.Env)
-}
 
 func main() {
+	var conf *config.Config
+	var log *slog.Logger
+
+	conf = config.MustLoad()
+	log = logs.InitLog(conf.Env)
 
 	application := app.New(conf, log)
 

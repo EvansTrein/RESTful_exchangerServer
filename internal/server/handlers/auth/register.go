@@ -3,15 +3,18 @@ package handlers
 import (
 	"log/slog"
 
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/services"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterHandler(log *slog.Logger, auth services.AuthService) gin.HandlerFunc {
+type registerServ interface {
+	Register(req models.RegisterRequest) (*models.RegisterResponse, error)
+}
+
+func RegisterHandler(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.Debug("RegisterHandler")
-		res, _ := auth.Register(models.RegisterRequest{})
+		res, _ := serv.Register(models.RegisterRequest{})
 
 		ctx.JSON(200, gin.H{"Register": res})
 	}

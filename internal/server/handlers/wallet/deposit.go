@@ -3,15 +3,18 @@ package handlers
 import (
 	"log/slog"
 
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/services"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
 
-func DepositHandler(log *slog.Logger, wallet services.WalletService) gin.HandlerFunc {
+type depositServ interface {
+	Deposit(req models.DepositRequest) (*models.DepositResponse, error)
+}
+
+func DepositHandler(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.Debug("DepositHandler")
-		res, _ := wallet.Deposit(models.DepositRequest{})
+		res, _ := serv.Deposit(models.DepositRequest{})
 
 		ctx.JSON(200, gin.H{"DepositHandler": res})
 	}
