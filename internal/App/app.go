@@ -16,7 +16,7 @@ type App struct {
 	log    *slog.Logger
 	conf   *config.Config
 	auth   services.AuthService
-	wallet services.Walletervice
+	wallet services.WalletService
 }
 
 func New(conf *config.Config, log *slog.Logger) *App {

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ExchangeHandler(log *slog.Logger, wallet services.Walletervice) gin.HandlerFunc {
+func ExchangeHandler(log *slog.Logger, wallet services.WalletService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.Debug("ExchangeHandler")
 		res, _ := wallet.Exchange(models.ExchangeRequest{})

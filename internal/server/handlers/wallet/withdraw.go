@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func WithdrawHandler(log *slog.Logger, wallet services.Walletervice) gin.HandlerFunc {
+func WithdrawHandler(log *slog.Logger, wallet services.WalletService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.Debug("WithdrawHandler")
 		res, _ := wallet.Withdraw(models.WithdrawRequest{})

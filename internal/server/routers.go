@@ -13,7 +13,7 @@ const (
 	apiVersion = "v1"
 )
 
-func (s *HttpServer) InitRouters(auth services.AuthService, wallet services.Walletervice) {
+func (s *HttpServer) InitRouters(auth services.AuthService, wallet services.WalletService) {
 	authRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
 	walletRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
 	

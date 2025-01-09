@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func DepositHandler(log *slog.Logger, wallet services.Walletervice) gin.HandlerFunc {
+func DepositHandler(log *slog.Logger, wallet services.WalletService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.Debug("DepositHandler")
 		res, _ := wallet.Deposit(models.DepositRequest{})

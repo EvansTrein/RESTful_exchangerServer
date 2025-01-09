@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func BalanceHandler(log *slog.Logger, wallet services.Walletervice) gin.HandlerFunc {
+func BalanceHandler(log *slog.Logger, wallet services.WalletService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.Debug("BalanceHandler")
 		res, _ := wallet.Balance(models.BalanceRequest{})

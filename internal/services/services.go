@@ -7,7 +7,7 @@ type AuthService interface {
 	Register(req models.RegisterRequest) (*models.RegisterResponse, error)
 }
 
-type Walletervice interface {
+type WalletService interface {
 	Balance(req models.BalanceRequest) (*models.BalanceResponse, error)
 	Deposit(req models.DepositRequest) (*models.DepositResponse, error)
 	Exchange(req models.ExchangeRequest) (*models.ExchangeResponse, error)
