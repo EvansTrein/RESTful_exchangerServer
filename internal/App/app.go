@@ -8,6 +8,7 @@ import (
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/services"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages/postgres"
 )
 
 type App struct {
@@ -20,8 +21,15 @@ type App struct {
 
 func New(conf *config.Config, log *slog.Logger) *App {
 	httpServer := server.New(log, conf.HTTPServer.Port)
-	auth := auth.New(log)
-	wallet := wallet.New(log)
+
+	db, err := postgres.New(conf.StoragePath, log)
+	if err != nil {
+		panic(err)
+	}
+
+	auth := auth.New(log, db)
+	wallet := wallet.New(log, db)
+
 
 	httpServer.InitRouters(auth, wallet)
 
