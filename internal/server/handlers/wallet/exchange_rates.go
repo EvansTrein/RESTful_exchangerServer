@@ -1,8 +1,24 @@
 package handlers
 
-// Метод: **GET**  
-// URL: **/api/v1/exchange/rates**  
-// Заголовки:  
+import (
+	"log/slog"
+
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/services"
+	"github.com/gin-gonic/gin"
+)
+
+func ExchangeRatesHandler(log *slog.Logger, wallet services.Walletervice) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		log.Debug("ExchangeRatesHandler")
+		res, _ := wallet.ExchangeRates()
+
+		ctx.JSON(200, gin.H{"ExchangeRatesHandler": res})
+	}
+}
+
+// Метод: **GET**
+// URL: **/api/v1/exchange/rates**
+// Заголовки:
 // _Authorization: Bearer JWT_TOKEN_
 
 // Ответ:
@@ -10,7 +26,7 @@ package handlers
 // • Успех: ```200 OK```
 // ```json
 // {
-//     "rates": 
+//     "rates":
 //     {
 //       "USD": "float",
 //       "RUB": "float",

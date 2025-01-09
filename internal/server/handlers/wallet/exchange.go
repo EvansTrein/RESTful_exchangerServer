@@ -1,8 +1,25 @@
 package handlers
 
-// Метод: **POST**  
-// URL: **/api/v1/exchange**  
-// Заголовки:  
+import (
+	"log/slog"
+
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/services"
+	"github.com/EvansTrein/RESTful_exchangerServer/models"
+	"github.com/gin-gonic/gin"
+)
+
+func ExchangeHandler(log *slog.Logger, wallet services.Walletervice) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		log.Debug("ExchangeHandler")
+		res, _ := wallet.Exchange(models.ExchangeRequest{})
+
+		ctx.JSON(200, gin.H{"ExchangeHandler": res})
+	}
+}
+
+// Метод: **POST**
+// URL: **/api/v1/exchange**
+// Заголовки:
 // _Authorization: Bearer JWT_TOKEN_
 
 // Тело запроса:

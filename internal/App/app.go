@@ -7,26 +7,30 @@ import (
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/server"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/services"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
 )
 
 type App struct {
 	server *server.HttpServer
-	log  *slog.Logger
-	conf *config.Config
-	auth services.AuthService
+	log    *slog.Logger
+	conf   *config.Config
+	auth   services.AuthService
+	wallet services.Walletervice
 }
 
 func New(conf *config.Config, log *slog.Logger) *App {
 	httpServer := server.New(log, conf.HTTPServer.Port)
 	auth := auth.New(log)
+	wallet := wallet.New(log)
 
-	httpServer.InitRouters(auth)
+	httpServer.InitRouters(auth, wallet)
 
 	app := &App{
 		server: httpServer,
 		log:    log,
 		conf:   conf,
 		auth:   auth,
+		wallet: wallet,
 	}
 
 	return app

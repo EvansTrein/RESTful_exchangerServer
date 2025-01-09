@@ -18,7 +18,7 @@ func New(log *slog.Logger, port string) *HttpServer {
 	return &HttpServer{
 		router: router,
 		port:   port,
-		log: log,
+		log:    log,
 	}
 }
 
