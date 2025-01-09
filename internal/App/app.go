@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
@@ -16,10 +17,15 @@ type App struct {
 	conf   *config.Config
 	auth   *servAuth.Auth
 	wallet *servWallet.Wallet
+	db     *postgres.PostgresDB
 }
 
 func New(conf *config.Config, log *slog.Logger) *App {
-	httpServer := server.New(log, conf.HTTPServer.Port)
+	log.Debug("application creation is started, database connection is in progress")
+	fmt.Println("app", &conf.HTTPServer)
+	fmt.Println("app", conf.HTTPServer)
+
+	httpServer := server.New(log, &conf.HTTPServer)
 
 	db, err := postgres.New(conf.StoragePath, log)
 	if err != nil {
@@ -37,15 +43,38 @@ func New(conf *config.Config, log *slog.Logger) *App {
 		conf:   conf,
 		auth:   auth,
 		wallet: wallet,
+		db:     db,
 	}
+
+	log.Info("application successfully created")
 
 	return app
 }
 
 func (a *App) MustStart() {
+	a.log.Debug("application has started")
 
-	a.log.Info("Starting server on port", "port", a.conf.HTTPServer.Port)
+	a.log.Info("application successfully launched", "port", a.conf.HTTPServer.Port)
 	if err := a.server.Start(); err != nil {
 		panic(err)
 	}
+}
+
+func (a *App) Stop() error {
+	a.log.Debug("application stop is running")
+
+	if err := a.server.Stop(); err != nil {
+		a.log.Error("failed to stop HTTP server")
+		return err
+	}
+
+	if err := a.db.Close(); err != nil {
+		a.log.Error("failed to close the database connection")
+		return err
+	}
+
+	a.auth = nil
+	a.wallet = nil
+
+	return nil
 }

@@ -1,14 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
 
-	app "github.com/EvansTrein/RESTful_exchangerServer/internal/app"
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/app"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
 	"github.com/EvansTrein/RESTful_exchangerServer/pkg/logs"
 )
-
 
 func main() {
 	var conf *config.Config
@@ -17,19 +18,19 @@ func main() {
 	conf = config.MustLoad()
 	log = logs.InitLog(conf.Env)
 
-	fmt.Println(conf.StoragePath)
-
 	application := app.New(conf, log)
 
-	application.MustStart()
+	go func() {
+		application.MustStart()
+	}()
 
-	// go func() {
-	// 	// TODO: start app
-	// }()
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	// done := make(chan os.Signal, 1)
-	// signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
-	// <-done
-	// // TODO: stop app
+	<-done
+	if err := application.Stop(); err != nil {
+		log.Error("an error occurred when stopping the application", "error", err)
+	} else {
+		log.Info("application stopped successfully")
+	}
 }
