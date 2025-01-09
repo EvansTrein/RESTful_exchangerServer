@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 
-	app "github.com/EvansTrein/RESTful_exchangerServer/internal/App"
+	app "github.com/EvansTrein/RESTful_exchangerServer/internal/app"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
 	"github.com/EvansTrein/RESTful_exchangerServer/pkg/logs"
 )
@@ -15,6 +16,8 @@ func main() {
 
 	conf = config.MustLoad()
 	log = logs.InitLog(conf.Env)
+
+	fmt.Println(conf.StoragePath)
 
 	application := app.New(conf, log)
 
