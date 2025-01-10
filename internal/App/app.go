@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
@@ -22,8 +21,6 @@ type App struct {
 
 func New(conf *config.Config, log *slog.Logger) *App {
 	log.Debug("application creation is started, database connection is in progress")
-	fmt.Println("app", &conf.HTTPServer)
-	fmt.Println("app", conf.HTTPServer)
 
 	httpServer := server.New(log, &conf.HTTPServer)
 
