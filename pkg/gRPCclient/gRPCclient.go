@@ -21,6 +21,8 @@ var (
 )
 
 type ClientGRPC interface {
+	GetAllRates(req *models.ExchangeRatesResponse) error
+	Close() error
 }
 
 type ServerGRPC struct {
@@ -29,18 +31,20 @@ type ServerGRPC struct {
 }
 
 func New(log *slog.Logger, grpcAddr string) (*ServerGRPC, error) {
-
+	log.Debug("gRPC server: started creating")
+	
 	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Error("failed to create a client for gRPC server", "error", err)
 		return nil, err
 	}
-
+	
+	log.Info("gRPC server: successfully created")
 	return &ServerGRPC{log: log, conn: conn}, nil
 }
 
 func (s *ServerGRPC) Close() error {
-	s.log.Info("Start closing the connection to the gRPC server")
+	s.log.Debug("gRPC server: stop started")
 
 	if err := s.conn.Close(); err != nil {
 		s.log.Error("failed to close connection with gRPC server")
@@ -49,7 +53,7 @@ func (s *ServerGRPC) Close() error {
 
 	s.conn = nil
 	
-	s.log.Info("connection with gRPC server successfully closed")
+	s.log.Info("gRPC server: stop successful")
 	return nil
 }
 

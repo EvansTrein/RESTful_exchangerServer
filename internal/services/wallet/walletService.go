@@ -10,21 +10,39 @@ import (
 
 type Wallet struct {
 	log        *slog.Logger
-	clientGRPC *grpcclient.ServerGRPC
+	clientGRPC grpcclient.ClientGRPC
 	db         storages.StoreWallet
 }
 
 func New(log *slog.Logger, db storages.StoreWallet, pathGRPC string) *Wallet {
+	log.Debug("service Wallet: started creating")
+	
 	client, err := grpcclient.New(log, pathGRPC)
 	if err != nil {
 		panic(err)
 	}
-
+	
+	log.Debug("service Wallet: successfully created")
 	return &Wallet{
 		log:        log,
 		clientGRPC: client,
 		db:         db,
 	}
+}
+
+func (w *Wallet) Stop() error {
+	w.log.Debug("service Wallet: stop started")
+
+	if err := w.clientGRPC.Close(); err != nil {
+		w.log.Error("failed to stop the Wallet service", "error", err)
+		return err
+	}
+
+	w.clientGRPC = nil
+	w.db = nil
+
+	w.log.Info("service Wallet: stop successful")
+	return nil
 }
 
 func (w *Wallet) Balance(req models.BalanceRequest) (*models.BalanceResponse, error) {

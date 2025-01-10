@@ -30,7 +30,5 @@ func main() {
 	<-done
 	if err := application.Stop(); err != nil {
 		log.Error("an error occurred when stopping the application", "error", err)
-	} else {
-		log.Info("application stopped successfully")
 	}
 }

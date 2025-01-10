@@ -15,7 +15,7 @@ type PostgresDB struct {
 
 // database connection
 func New(storagePath string, log *slog.Logger) (*PostgresDB, error) {
-	log.Debug("Connection to Postgres started")
+	log.Debug("database: connection to Postgres started")
 
 	db, err := sql.Open("postgres", storagePath)
 	if err != nil {
@@ -26,14 +26,14 @@ func New(storagePath string, log *slog.Logger) (*PostgresDB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Info("connect to Postgres successfully")
+	log.Info("database: connect to Postgres successfully")
 
 	return &PostgresDB{db: db, log: log}, nil
 }
 
 // database disconnection
 func (s *PostgresDB) Close() error {
-	s.log.Debug("begins disconnecting from the database")
+	s.log.Debug("database: stop started")
 
 	if s.db == nil {
 		return fmt.Errorf("database connection is already closed")
@@ -46,7 +46,7 @@ func (s *PostgresDB) Close() error {
 
 	s.db = nil
 
-	s.log.Info("database connection successfully closed")
+	s.log.Info("database: stop successful")
 
 	return nil
 }

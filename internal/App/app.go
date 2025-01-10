@@ -22,7 +22,7 @@ type App struct {
 const grpcAddress = "localhost:44000"
 
 func New(conf *config.Config, log *slog.Logger) *App {
-	log.Debug("application creation is started, database connection is in progress")
+	log.Debug("application: creation is started")
 
 	httpServer := server.New(log, &conf.HTTPServer)
 
@@ -45,25 +45,29 @@ func New(conf *config.Config, log *slog.Logger) *App {
 		db:     db,
 	}
 
-	log.Info("application successfully created")
-
+	log.Info("application: successfully created")
 	return app
 }
 
 func (a *App) MustStart() {
-	a.log.Debug("application has started")
+	a.log.Debug("application: started")
 
-	a.log.Info("application successfully launched", "port", a.conf.HTTPServer.Port)
+	a.log.Info("application: successfully started", "port", a.conf.HTTPServer.Port)
 	if err := a.server.Start(); err != nil {
 		panic(err)
 	}
 }
 
 func (a *App) Stop() error {
-	a.log.Debug("application stop is running")
+	a.log.Debug("application: stop started")
 
 	if err := a.server.Stop(); err != nil {
 		a.log.Error("failed to stop HTTP server")
+		return err
+	}
+
+	if err := a.wallet.Stop(); err != nil {
+		a.log.Error("failed to stop the Wallet service")
 		return err
 	}
 
@@ -75,5 +79,6 @@ func (a *App) Stop() error {
 	a.auth = nil
 	a.wallet = nil
 
+	a.log.Info("application: stop successful")
 	return nil
 }

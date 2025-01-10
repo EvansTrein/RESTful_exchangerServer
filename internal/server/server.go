@@ -38,7 +38,7 @@ func (s *HttpServer) Start() error {
 		slog.String("IdleTimeout", s.conf.IdleTimeout.String()),
 	)
 
-	log.Debug("started creating HTTP server")
+	log.Debug("HTTP server: started creating")
 
 	s.server = &http.Server{
 		Addr:              s.conf.Address + ":" + s.conf.Port,
@@ -49,7 +49,7 @@ func (s *HttpServer) Start() error {
 		IdleTimeout:       s.conf.IdleTimeout,
 	}
 
-	s.log.Info("http server successfully created")
+	s.log.Info("HTTP server: successfully created")
 	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}
@@ -58,7 +58,7 @@ func (s *HttpServer) Start() error {
 }
 
 func (s *HttpServer) Stop() error {
-	s.log.Debug("HTTP server shutdown started")
+	s.log.Debug("HTTP server: stop started")
 
 	ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimer)
 	defer cancel()
@@ -70,6 +70,6 @@ func (s *HttpServer) Stop() error {
 
 	s.server = nil
 
-	s.log.Info("Server stopped gracefully")
+	s.log.Info("HTTP server: stop successful")
 	return nil
 }

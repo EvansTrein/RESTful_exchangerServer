@@ -13,10 +13,14 @@ type Auth struct {
 }
 
 func New(log *slog.Logger, db storages.StoreAuth) *Auth {
+	log.Debug("Auth service: started creating")
+
+	log.Info("Auth service: successfully created")
 	return &Auth{
 		log: log,
 		db: db,
 	}
+
 }
 
 func (a *Auth) Register(req models.RegisterRequest) (*models.RegisterResponse, error) {
