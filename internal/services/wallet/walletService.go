@@ -15,7 +15,7 @@ type Wallet struct {
 }
 
 func New(log *slog.Logger, db storages.StoreWallet, pathGRPC string) *Wallet {
-	client, err := grpcclient.New(pathGRPC)
+	client, err := grpcclient.New(log, pathGRPC)
 	if err != nil {
 		panic(err)
 	}
@@ -48,27 +48,17 @@ func (w *Wallet) Withdraw(req models.WithdrawRequest) (*models.WithdrawResponse,
 }
 
 func (w *Wallet) ExchangeRates() (*models.ExchangeRatesResponse, error) {
-	w.log.Debug("Wallet - ExchangeRates")
+	op := "service Wallet: obtaining all exchange rates"
+	log := w.log.With(slog.String("operation", op))
+	log.Debug("ExchangeRates func call")
+
 	var resp models.ExchangeRatesResponse
 
-	answerDB, err := w.db.TestConnect()
-	if err != nil {
-		w.log.Error("failed ping DB", "error", err)
-	} else {
-		w.log.Debug("successful ping DB", "answerDB", answerDB)
-	}
-
 	if err := w.clientGRPC.GetAllRates(&resp); err != nil {
-		w.log.Error("failed to get data from GRPC server", "error", err)
+		log.Error("failed to get data from GRPC server", "error", err)
 		return nil, err
 	}
 
-	// if resp.Rates == nil {
-	// 	return nil, fmt.Errorf("not data server")
-	// }
-
-	// 503 Service Unavailable
-
-	w.log.Info("ExchangeRates - successful")
+	w.log.Info("all exchange rates have been successfully received")
 	return &resp, nil
 }

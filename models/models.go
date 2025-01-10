@@ -65,3 +65,10 @@ type WithdrawResponse struct {
 	Message    string          `json:"message"`
 	NewBalance BalanceResponse `json:"new_balance"`
 }
+
+type HandlerResponse struct {
+	Status  int    `json:"status"`
+	Error   string `json:"error"`
+	Message string `json:"message"`
+	Data    any    `json:"data"`
+}
