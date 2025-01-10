@@ -5,17 +5,25 @@ import (
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
+	grpcclient "github.com/EvansTrein/RESTful_exchangerServer/pkg/gRPCclient"
 )
 
 type Wallet struct {
-	log *slog.Logger
-	db  storages.StoreWallet
+	log        *slog.Logger
+	clientGRPC *grpcclient.ServerGRPC
+	db         storages.StoreWallet
 }
 
-func New(log *slog.Logger, db storages.StoreWallet) *Wallet {
+func New(log *slog.Logger, db storages.StoreWallet, pathGRPC string) *Wallet {
+	client, err := grpcclient.New(pathGRPC)
+	if err != nil {
+		panic(err)
+	}
+
 	return &Wallet{
-		log: log,
-		db: db,
+		log:        log,
+		clientGRPC: client,
+		db:         db,
 	}
 }
 
@@ -40,7 +48,8 @@ func (w *Wallet) Withdraw(req models.WithdrawRequest) (*models.WithdrawResponse,
 }
 
 func (w *Wallet) ExchangeRates() (*models.ExchangeRatesResponse, error) {
-	w.log.Debug("ExchangeRates")
+	w.log.Debug("Wallet - ExchangeRates")
+	var resp models.ExchangeRatesResponse
 
 	answerDB, err := w.db.TestConnect()
 	if err != nil {
@@ -49,14 +58,16 @@ func (w *Wallet) ExchangeRates() (*models.ExchangeRatesResponse, error) {
 		w.log.Debug("successful ping DB", "answerDB", answerDB)
 	}
 
-	var resp models.ExchangeRatesResponse
-	rates := make(map[string]float32)
+	if err := w.clientGRPC.GetAllRates(&resp); err != nil {
+		w.log.Error("failed to get data from GRPC server", "error", err)
+		return nil, err
+	}
 
-	rates["USD/RUB"] = 100.4
-	rates["EUR/RUB"] = 110.6
-	rates["CNY/RUB"] = 13.2
+	// if resp.Rates == nil {
+	// 	return nil, fmt.Errorf("not data server")
+	// }
 
-	resp.Rates = rates
+	// 503 Service Unavailable
 
 	w.log.Info("ExchangeRates - successful")
 	return &resp, nil
