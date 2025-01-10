@@ -22,7 +22,7 @@ func New(log *slog.Logger, db storages.StoreWallet, pathGRPC string) *Wallet {
 		panic(err)
 	}
 	
-	log.Debug("service Wallet: successfully created")
+	log.Info("service Wallet: successfully created")
 	return &Wallet{
 		log:        log,
 		clientGRPC: client,
