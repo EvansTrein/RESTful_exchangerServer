@@ -55,14 +55,32 @@ func (w *Wallet) Deposit(req models.DepositRequest) (*models.DepositResponse, er
 	return &models.DepositResponse{}, nil
 }
 
-func (w *Wallet) Exchange(req models.ExchangeRequest) (*models.ExchangeResponse, error) {
-
-	return &models.ExchangeResponse{}, nil
+func (w *Wallet) Withdraw(req models.WithdrawRequest) (*models.WithdrawResponse, error) {
+	
+	return &models.WithdrawResponse{}, nil
 }
 
-func (w *Wallet) Withdraw(req models.WithdrawRequest) (*models.WithdrawResponse, error) {
+func (w *Wallet) Exchange(req models.ExchangeRequest) (*models.ExchangeResponse, error) {
+	op := "service Wallet: currency exchange request"
+	log := w.log.With(slog.String("operation", op), slog.Any("requets data", req))
+	log.Debug("Exchange func call")
 
-	return &models.WithdrawResponse{}, nil
+	var resp models.ExchangeResponse
+	var rate models.ExchangeGRPC
+
+	rate.FromCurrency = req.FromCurrency
+	rate.ToCurrency = req.ToCurrency
+
+	if err := w.clientGRPC.ExchangeRate(&rate); err != nil {
+		log.Error("failed to get data from GRPC server", "error", err)
+		return nil, err
+	}
+
+	log.Debug("exchange rate successfully received from gRPC server", "rate from gRPC", rate)
+	// TODO: тут получен курс, сохранить его в Redis
+	// TODO: тут получен курс, далее обращение к БД
+
+	return &resp, nil
 }
 
 func (w *Wallet) ExchangeRates() (*models.ExchangeRatesResponse, error) {

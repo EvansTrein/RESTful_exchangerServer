@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"log/slog"
+	"net/http"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
@@ -11,12 +12,35 @@ type exchangeServ interface {
 	Exchange(req models.ExchangeRequest) (*models.ExchangeResponse, error)
 }
 
-func ExchangeHandler(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
+func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		log.Debug("ExchangeHandler")
-		res, _ := serv.Exchange(models.ExchangeRequest{})
+		op := "Handler Exchange: call"
+		castLog := log.With(
+			slog.String("operation", op), 
+			slog.String("apiPath", ctx.FullPath()),
+			slog.String("HTTP Method", ctx.Request.Method),	
+		)
+		castLog.Debug("request received")
 
-		ctx.JSON(200, gin.H{"ExchangeHandler": res})
+		var req models.ExchangeRequest
+
+		if err := ctx.BindJSON(&req); err != nil {
+			castLog.Warn("fail BindJSON", "error", err)
+			return
+		} 
+
+		castLog.Debug("request data has been successfully validated", "data", req)
+		
+
+		result, err := serv.Exchange(req)
+
+		if err != nil {
+			castLog.Error("failed to send data", "error", err)
+			ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
+			return
+		}
+
+		ctx.JSON(200, models.HandlerResponse{Status: http.StatusOK, Message: "data successfully sent", Data: result})
 	}
 }
 

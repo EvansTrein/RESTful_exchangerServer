@@ -43,10 +43,16 @@ type ExchangeRatesResponse struct {
 }
 
 type ExchangeRequest struct {
-	UserID       int     `json:"id"`
-	FromCurrency string  `json:"from_currency"`
-	ToCurrency   string  `json:"to_currency"`
-	Amount       float32 `json:"amount"`
+	UserID       int     `json:"id" binding:"required"`
+	FromCurrency string  `json:"from_currency" binding:"required"`
+	ToCurrency   string  `json:"to_currency" binding:"required"`
+	Amount       float32 `json:"amount" binding:"required"`
+}
+
+type ExchangeGRPC struct {
+	FromCurrency string  `json:"from_currency" binding:"required"`
+	ToCurrency   string  `json:"to_currency" binding:"required"`
+	Rate         float32 `json:"rate" binding:"required"`
 }
 
 type ExchangeResponse struct {

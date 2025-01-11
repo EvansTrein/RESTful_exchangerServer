@@ -22,6 +22,7 @@ var (
 
 type ClientGRPC interface {
 	GetAllRates(req *models.ExchangeRatesResponse) error
+	ExchangeRate(req *models.ExchangeGRPC) error
 	Close() error
 }
 
@@ -32,13 +33,13 @@ type ServerGRPC struct {
 
 func New(log *slog.Logger, grpcAddr string) (*ServerGRPC, error) {
 	log.Debug("gRPC server: started creating")
-	
+
 	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Error("failed to create a client for gRPC server", "error", err)
 		return nil, err
 	}
-	
+
 	log.Info("gRPC server: successfully created")
 	return &ServerGRPC{log: log, conn: conn}, nil
 }
@@ -52,7 +53,7 @@ func (s *ServerGRPC) Close() error {
 	}
 
 	s.conn = nil
-	
+
 	s.log.Info("gRPC server: stop successful")
 	return nil
 }
@@ -83,8 +84,43 @@ func (s *ServerGRPC) GetAllRates(req *models.ExchangeRatesResponse) error {
 		return ErrServerUnavailable
 	}
 
-	s.log.Info("data from gRPC server successfully received")
 	req.Rates = callGRPC.GetRates()
+	s.log.Info("data from gRPC server successfully received")
+	return nil
+}
 
+func (s *ServerGRPC) ExchangeRate(req *models.ExchangeGRPC) error {
+	op := "gRPC server: currency exchange rate request"
+	log := s.log.With(slog.String("operation", op))
+	log.Debug("ExchangeRate func call")
+
+	client := pb.NewExchangeServiceClient(s.conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), gRPCTimeoutMethodCall)
+	defer cancel()
+
+	var reqForGRPC pb.CurrencyRequest 
+
+	reqForGRPC.FromCurrency = req.FromCurrency
+	reqForGRPC.ToCurrency = req.ToCurrency
+
+	callGRPC, err := client.GetExchangeRateForCurrency(ctx, &reqForGRPC)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Warn("timeout time for response from gRPC server has expired")
+			return ErrServerTimeOut
+		} else {
+			log.Warn("failed to get data from gRPC server", "error", err)
+			return fmt.Errorf("failed %s, error: %s", op, err.Error())
+		}
+	}
+
+	if callGRPC.GetRate() == 0 {
+		log.Warn(ErrServerUnavailable.Error())
+		return ErrServerUnavailable
+	}
+
+	req.Rate = callGRPC.GetRate()
+	s.log.Info("data from gRPC server successfully received")
 	return nil
 }
