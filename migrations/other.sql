@@ -29,22 +29,6 @@ VALUES
     ('CNY', 'Chinese Yuan');
 
 
--- Добавление пользователя
-BEGIN;
-
-INSERT INTO users (name, email, password_hash)
-VALUES ('NewUser', 'newuser@mail.com', 'hashedpassword')
-RETURNING id;
-
--- Создание счетов для нового пользователя во всех валютах
-INSERT INTO accounts (user_id, currency_code)
-SELECT currval('users_id_seq'), code
-FROM currencies;
-
-COMMIT;
-
-
-
 -- Пополнение счета
 UPDATE accounts
 SET balance = balance + 100.00

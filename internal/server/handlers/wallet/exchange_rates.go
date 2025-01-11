@@ -28,15 +28,27 @@ func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
 			switch err {
 			case grpcclient.ErrServerUnavailable:
 				castLog.Warn("failed to send data", "error", err)
-				ctx.JSON(503, models.HandlerResponse{Status: http.StatusServiceUnavailable, Error: err.Error()})
+				ctx.JSON(503, models.HandlerResponse{
+					Status: http.StatusServiceUnavailable, 
+					Error: err.Error(), 
+					Message: "failed to retrieve data",
+				})
 				return
 			case grpcclient.ErrServerTimeOut:
 				castLog.Warn("failed to send data", "error", err)
-				ctx.JSON(504, models.HandlerResponse{Status: http.StatusGatewayTimeout, Error: err.Error()})
+				ctx.JSON(504, models.HandlerResponse{
+					Status: http.StatusGatewayTimeout, 
+					Error: err.Error(), 
+					Message: "the waiting time for a response from the internal service has expired",
+				})
 				return
 			default:
 				castLog.Error("failed to send data", "error", err)
-				ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
+				ctx.JSON(500, models.HandlerResponse{
+					Status: http.StatusInternalServerError, 
+					Error: err.Error(), 
+					Message: "failed to retrieve data",
+				})
 				return
 			}
 		}

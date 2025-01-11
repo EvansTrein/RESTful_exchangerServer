@@ -27,7 +27,7 @@ func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 
 		if err := ctx.ShouldBindJSON(&req); err != nil {
 			castLog.Warn("fail BindJSON", "error", err)
-			ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error()})
+			ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error(), Message: "invalid data"})
 			return
 		}
 
@@ -36,11 +36,19 @@ func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 			switch err {
 			case storages.ErrEmailAlreadyExists:
 				castLog.Warn("failed to create user", "error", err)
-				ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error()})
+				ctx.JSON(400, models.HandlerResponse{
+					Status: http.StatusBadRequest, 
+					Error: err.Error(), 
+					Message: "failed to save a new user",
+				})
 				return
 			default:
 				castLog.Error("failed to create user", "error", err)
-				ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
+				ctx.JSON(500, models.HandlerResponse{
+					Status: http.StatusInternalServerError, 
+					Error: err.Error(), 
+					Message: "failed to save a new user",
+				})
 				return
 			}
 		}

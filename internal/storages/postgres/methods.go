@@ -20,7 +20,8 @@ func (db *PostgresDB) Register(req models.RegisterRequest) (uint, error) {
 	
 	INSERT INTO accounts (user_id, currency_code)
 	SELECT new_user.id, code
-	FROM currencies, new_user
+	FROM currencies
+	CROSS JOIN new_user
 	RETURNING user_id;`
 
 	stmt, err := db.db.Prepare(query)
