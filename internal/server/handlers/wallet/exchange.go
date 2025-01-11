@@ -15,28 +15,28 @@ type exchangeServ interface {
 func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Exchange: call"
-		castLog := log.With(
+		log = log.With(
 			slog.String("operation", op), 
 			slog.String("apiPath", ctx.FullPath()),
 			slog.String("HTTP Method", ctx.Request.Method),	
 		)
-		castLog.Debug("request received")
+		log.Debug("request received")
 
 		var req models.ExchangeRequest
 
 		if err := ctx.ShouldBindJSON(&req); err != nil {
-			castLog.Warn("fail BindJSON", "error", err)
+			log.Warn("fail BindJSON", "error", err)
 			ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error(), Message: "invalid data"})
 			return
 		} 
 
-		castLog.Debug("request data has been successfully validated", "data", req)
+		log.Debug("request data has been successfully validated", "data", req)
 
 		result, err := serv.Exchange(req)
 
 		if err != nil {
 			// TODO: вернуть 404 если запрошенной валюты нет
-			castLog.Error("failed to send data", "error", err)
+			log.Error("failed to send data", "error", err)
 			ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
 			return
 		}

@@ -26,8 +26,8 @@ func New(log *slog.Logger, db storages.StoreAuth) *Auth {
 
 func (a *Auth) Register(req models.RegisterRequest) (*models.RegisterResponse, error) {
 	op := "service Auth: user registration"
-	log := a.log.With(slog.String("operation", op), slog.Any("requets data", req))
-	log.Debug("Register func call")
+	log := a.log.With(slog.String("operation", op))
+	log.Debug("Register func call", slog.Any("requets data", req))
 
 	hash, err := utils.Hashing(req.HashPassword)
 	if err != nil {
@@ -43,6 +43,7 @@ func (a *Auth) Register(req models.RegisterRequest) (*models.RegisterResponse, e
 		return nil, err
 	}
 
+	log.Info("user successfully created")
 	return &models.RegisterResponse{Message: "user successfully created", UserID: id}, nil
 }
 

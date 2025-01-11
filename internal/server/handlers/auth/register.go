@@ -16,26 +16,28 @@ type registerServ interface {
 func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Register: call"
-		castLog := log.With(
+		log = log.With(
 			slog.String("operation", op),
 			slog.String("apiPath", ctx.FullPath()),
 			slog.String("HTTP Method", ctx.Request.Method),
 		)
-		castLog.Debug("user registration request received")
+		log.Debug("user registration request received")
 
 		var req models.RegisterRequest
 
 		if err := ctx.ShouldBindJSON(&req); err != nil {
-			castLog.Warn("fail BindJSON", "error", err)
+			log.Warn("fail BindJSON", "error", err)
 			ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error(), Message: "invalid data"})
 			return
 		}
+
+		log.Debug("request data has been successfully validated", "data", req)
 
 		result, err := serv.Register(req)
 		if err != nil {
 			switch err {
 			case storages.ErrEmailAlreadyExists:
-				castLog.Warn("failed to create user", "error", err)
+				log.Warn("failed to create user", "error", err)
 				ctx.JSON(400, models.HandlerResponse{
 					Status: http.StatusBadRequest, 
 					Error: err.Error(), 
@@ -43,7 +45,7 @@ func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 				})
 				return
 			default:
-				castLog.Error("failed to create user", "error", err)
+				log.Error("failed to create user", "error", err)
 				ctx.JSON(500, models.HandlerResponse{
 					Status: http.StatusInternalServerError, 
 					Error: err.Error(), 
@@ -53,6 +55,7 @@ func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 			}
 		}
 
+		log.Info("user successfully saved")
 		ctx.JSON(201, result)
 	}
 }

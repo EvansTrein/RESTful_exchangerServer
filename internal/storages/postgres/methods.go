@@ -10,8 +10,8 @@ import (
 
 func (db *PostgresDB) Register(req models.RegisterRequest) (uint, error) {
 	op := "Database: user registration"
-	log := db.log.With(slog.String("operation", op), slog.Any("requets data", req))
-	log.Debug("Register func call")
+	log := db.log.With(slog.String("operation", op))
+	log.Debug("Register func call", slog.Any("requets data", req))
 
 	query := `WITH new_user AS (
 		INSERT INTO users (name, email, password_hash)
@@ -41,7 +41,7 @@ func (db *PostgresDB) Register(req models.RegisterRequest) (uint, error) {
 		return 0, err
 	}
 
-	db.log.Info("user registered successfully")
+	log.Info("data has been successfully saved in the database")
 	return id, nil
 }
 

@@ -62,8 +62,8 @@ func (w *Wallet) Withdraw(req models.WithdrawRequest) (*models.WithdrawResponse,
 
 func (w *Wallet) Exchange(req models.ExchangeRequest) (*models.ExchangeResponse, error) {
 	op := "service Wallet: currency exchange request"
-	log := w.log.With(slog.String("operation", op), slog.Any("requets data", req))
-	log.Debug("Exchange func call")
+	log := w.log.With(slog.String("operation", op))
+	log.Debug("Exchange func call", slog.Any("requets data", req))
 
 	var resp models.ExchangeResponse
 	var rate models.ExchangeGRPC
@@ -99,6 +99,6 @@ func (w *Wallet) ExchangeRates() (*models.ExchangeRatesResponse, error) {
 
 	resp.Message = "data successfully received"
 
-	w.log.Info("all exchange rates have been successfully received")
+	log.Info("all exchange rates have been successfully received")
 	return &resp, nil
 }

@@ -88,7 +88,7 @@ func (s *ServerGRPC) GetAllRates(req *models.ExchangeRatesResponse) error {
 	}
 
 	req.Rates = callGRPC.GetRates()
-	s.log.Info("data from gRPC server successfully received")
+	log.Info("data from gRPC server successfully received")
 	return nil
 }
 
@@ -127,6 +127,6 @@ func (s *ServerGRPC) ExchangeRate(req *models.ExchangeGRPC) error {
 	}
 
 	req.Rate = callGRPC.GetRate()
-	s.log.Info("data from gRPC server successfully received")
+	log.Info("data from gRPC server successfully received")
 	return nil
 }
