@@ -17,10 +17,10 @@ var (
 )
 
 type StoreAuth interface {
-	Register(req models.RegisterRequest) (*models.RegisterResponse, error)
+	Register(req models.RegisterRequest) (uint, error)
 	Login(req models.LoginRequest) (*models.LoginResponse, error)
 }
 
 type StoreWallet interface {
-	TestConnect() (int, error)
+
 }

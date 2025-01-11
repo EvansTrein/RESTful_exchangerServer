@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"log/slog"
+	"net/http"
 
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
@@ -11,12 +13,39 @@ type registerServ interface {
 	Register(req models.RegisterRequest) (*models.RegisterResponse, error)
 }
 
-func RegisterHandler(log *slog.Logger, serv registerServ) gin.HandlerFunc {
+func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		log.Debug("RegisterHandler")
-		res, _ := serv.Register(models.RegisterRequest{})
+		op := "Handler Register: call"
+		castLog := log.With(
+			slog.String("operation", op),
+			slog.String("apiPath", ctx.FullPath()),
+			slog.String("HTTP Method", ctx.Request.Method),
+		)
+		castLog.Debug("user registration request received")
 
-		ctx.JSON(200, gin.H{"Register": res})
+		var req models.RegisterRequest
+
+		if err := ctx.ShouldBindJSON(&req); err != nil {
+			castLog.Warn("fail BindJSON", "error", err)
+			ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error()})
+			return
+		}
+
+		result, err := serv.Register(req)
+		if err != nil {
+			switch err {
+			case storages.ErrEmailAlreadyExists:
+				castLog.Warn("failed to create user", "error", err)
+				ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error()})
+				return
+			default:
+				castLog.Error("failed to create user", "error", err)
+				ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
+				return
+			}
+		}
+
+		ctx.JSON(201, result)
 	}
 }
 

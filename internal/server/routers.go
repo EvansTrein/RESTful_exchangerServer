@@ -18,8 +18,8 @@ func (s *HttpServer) InitRouters(auth *servAuth.Auth, wallet *servWallet.Wallet)
 	authRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
 	walletRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
 	
-	authRouters.POST("/register", handlerAuth.RegisterHandler(s.log, auth))
-	authRouters.POST("/login", handlerAuth.LoginHandler(s.log, auth))
+	authRouters.POST("/register", handlerAuth.Register(s.log, auth))
+	authRouters.POST("/login", handlerAuth.Login(s.log, auth))
 
 	walletRouters.Use(handler.LoggingMiddleware())
 	// walletRouters.Use(handler.TimeoutMiddleware(s.log))

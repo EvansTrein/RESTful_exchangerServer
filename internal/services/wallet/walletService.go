@@ -80,6 +80,8 @@ func (w *Wallet) Exchange(req models.ExchangeRequest) (*models.ExchangeResponse,
 	// TODO: тут получен курс, сохранить его в Redis
 	// TODO: тут получен курс, далее обращение к БД
 
+	resp.Message = "data successfully received"
+	
 	return &resp, nil
 }
 
@@ -94,6 +96,8 @@ func (w *Wallet) ExchangeRates() (*models.ExchangeRatesResponse, error) {
 		log.Error("failed to get data from GRPC server", "error", err)
 		return nil, err
 	}
+
+	resp.Message = "data successfully received"
 
 	w.log.Info("all exchange rates have been successfully received")
 	return &resp, nil

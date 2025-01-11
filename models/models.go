@@ -1,17 +1,18 @@
 package models
 
 type RegisterRequest struct {
-	Email    string `json:"email"`
-	Name     string `json:"username"`
-	Password string `json:"password"`
+	Email        string `json:"email" binding:"required,email"`
+	Name         string `json:"username" binding:"required,min=3"`
+	HashPassword string `json:"password" binding:"required,min=6"`
 }
 
 type RegisterResponse struct {
+	UserID  uint   `json:"id"`
 	Message string `json:"message"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"username"`
+	Name     string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -39,7 +40,8 @@ type DepositResponse struct {
 }
 
 type ExchangeRatesResponse struct {
-	Rates map[string]float32 `json:"rates"`
+	Message string             `json:"message"`
+	Rates   map[string]float32 `json:"rates"`
 }
 
 type ExchangeRequest struct {
@@ -76,5 +78,4 @@ type HandlerResponse struct {
 	Status  int    `json:"status"`
 	Error   string `json:"error"`
 	Message string `json:"message"`
-	Data    any    `json:"data"`
 }

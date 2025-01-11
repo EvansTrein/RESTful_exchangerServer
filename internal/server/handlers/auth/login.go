@@ -11,7 +11,7 @@ type loginServ interface {
 	Login(req models.LoginRequest) (*models.LoginResponse, error)
 }
 
-func LoginHandler(log *slog.Logger, serv loginServ) gin.HandlerFunc {
+func Login(log *slog.Logger, serv loginServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.Debug("LoginHandler")
 		res, _ := serv.Login(models.LoginRequest{})

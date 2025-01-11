@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -18,9 +17,9 @@ func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler ExchangeRates: call"
 		castLog := log.With(
-			slog.String("operation", op), 
+			slog.String("operation", op),
 			slog.String("apiPath", ctx.FullPath()),
-			slog.String("HTTP Method", ctx.Request.Method),	
+			slog.String("HTTP Method", ctx.Request.Method),
 		)
 		castLog.Debug("request received")
 
@@ -36,7 +35,6 @@ func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
 				ctx.JSON(504, models.HandlerResponse{Status: http.StatusGatewayTimeout, Error: err.Error()})
 				return
 			default:
-				fmt.Println(err)
 				castLog.Error("failed to send data", "error", err)
 				ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
 				return
@@ -44,7 +42,7 @@ func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
 		}
 
 		log.Info("data successfully sent")
-		ctx.JSON(200, models.HandlerResponse{Status: http.StatusOK, Message: "data successfully sent", Data: result})
+		ctx.JSON(200, result)
 	}
 }
 
