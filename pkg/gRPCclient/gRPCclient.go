@@ -10,7 +10,9 @@ import (
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	pb "github.com/EvansTrein/proto-exchange/exchange"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -18,6 +20,7 @@ var (
 
 	ErrServerUnavailable = errors.New("gRPC server is unavailable")
 	ErrServerTimeOut     = errors.New("gRPC method call execution timeout expired")
+	ErrServerNotCuttency = errors.New("gRPC currency is not supported")
 )
 
 type ClientGRPC interface {
@@ -99,7 +102,7 @@ func (s *ServerGRPC) ExchangeRate(req *models.ExchangeGRPC) error {
 	ctx, cancel := context.WithTimeout(context.Background(), gRPCTimeoutMethodCall)
 	defer cancel()
 
-	var reqForGRPC pb.CurrencyRequest 
+	var reqForGRPC pb.CurrencyRequest
 
 	reqForGRPC.FromCurrency = req.FromCurrency
 	reqForGRPC.ToCurrency = req.ToCurrency
@@ -109,6 +112,9 @@ func (s *ServerGRPC) ExchangeRate(req *models.ExchangeGRPC) error {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Warn("timeout time for response from gRPC server has expired")
 			return ErrServerTimeOut
+		} else if status.Code(err) == codes.NotFound {
+			log.Warn("currency that is not supported has been requested")
+			return ErrServerNotCuttency
 		} else {
 			log.Warn("failed to get data from gRPC server", "error", err)
 			return fmt.Errorf("failed %s, error: %s", op, err.Error())

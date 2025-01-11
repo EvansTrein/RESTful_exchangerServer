@@ -35,6 +35,7 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 		result, err := serv.Exchange(req)
 
 		if err != nil {
+			// TODO: вернуть 404 если запрошенной валюты нет
 			castLog.Error("failed to send data", "error", err)
 			ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
 			return
