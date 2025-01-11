@@ -30,7 +30,6 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 		} 
 
 		castLog.Debug("request data has been successfully validated", "data", req)
-		
 
 		result, err := serv.Exchange(req)
 

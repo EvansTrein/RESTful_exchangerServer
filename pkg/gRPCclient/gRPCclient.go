@@ -20,7 +20,7 @@ var (
 
 	ErrServerUnavailable = errors.New("gRPC server is unavailable")
 	ErrServerTimeOut     = errors.New("gRPC method call execution timeout expired")
-	ErrServerNotCuttency = errors.New("gRPC currency is not supported")
+	ErrServerNotCurrency = errors.New("gRPC currency is not supported")
 )
 
 type ClientGRPC interface {
@@ -114,7 +114,7 @@ func (s *ServerGRPC) ExchangeRate(req *models.ExchangeGRPC) error {
 			return ErrServerTimeOut
 		} else if status.Code(err) == codes.NotFound {
 			log.Warn("currency that is not supported has been requested")
-			return ErrServerNotCuttency
+			return ErrServerNotCurrency
 		} else {
 			log.Warn("failed to get data from gRPC server", "error", err)
 			return fmt.Errorf("failed %s, error: %s", op, err.Error())
