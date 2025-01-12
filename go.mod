@@ -5,6 +5,7 @@ go 1.23.0
 require (
 	github.com/EvansTrein/proto-exchange v0.0.0-20241225152547-3bbf9e163ebc
 	github.com/gin-gonic/gin v1.10.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9

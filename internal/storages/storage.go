@@ -10,15 +10,15 @@ var (
 	// errors StoreAuth
 	ErrUserNotFound = errors.New("user not found")
 	ErrEmailAlreadyExists = errors.New("email already exists")
-	ErrInvalidLoginData = errors.New("invalid username or password")
+	ErrInvalidLoginData = errors.New("invalid email or password")
 
 	// errors StoreWallet
 
 )
 
 type StoreAuth interface {
-	Register(req models.RegisterRequest) (uint, error)
-	Login(req models.LoginRequest) (*models.LoginResponse, error)
+	CreateUser(req models.RegisterRequest) (uint, error)
+	SearchUser(req models.LoginRequest) (*models.User, error)
 }
 
 type StoreWallet interface {

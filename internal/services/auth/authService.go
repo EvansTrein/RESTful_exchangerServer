@@ -9,19 +9,20 @@ import (
 )
 
 type Auth struct {
-	log *slog.Logger
-	db  storages.StoreAuth
+	log       *slog.Logger
+	db        storages.StoreAuth
+	secretKey string
 }
 
-func New(log *slog.Logger, db storages.StoreAuth) *Auth {
+func New(log *slog.Logger, db storages.StoreAuth, secretKey string) *Auth {
 	log.Debug("Auth service: started creating")
 
 	log.Info("Auth service: successfully created")
 	return &Auth{
-		log: log,
-		db:  db,
+		log:       log,
+		db:        db,
+		secretKey: secretKey,
 	}
-
 }
 
 func (a *Auth) Register(req models.RegisterRequest) (*models.RegisterResponse, error) {
@@ -37,7 +38,7 @@ func (a *Auth) Register(req models.RegisterRequest) (*models.RegisterResponse, e
 
 	req.HashPassword = hash
 
-	id, err := a.db.Register(req)
+	id, err := a.db.CreateUser(req)
 	if err != nil {
 		log.Error("failed to save a new user in the database", "error", err)
 		return nil, err
@@ -48,7 +49,37 @@ func (a *Auth) Register(req models.RegisterRequest) (*models.RegisterResponse, e
 }
 
 func (a *Auth) Login(req models.LoginRequest) (*models.LoginResponse, error) {
-	a.log.Debug("Auth Login")
+	op := "service Auth: user login"
+	log := a.log.With(slog.String("operation", op))
+	log.Debug("Login func call", slog.Any("requets data", req))
 
-	return &models.LoginResponse{Token: "fake token"}, nil
+	user, err := a.db.SearchUser(req)
+	if err != nil {
+		log.Warn("failed to find the user in the database", "error", err)
+		return nil, err
+	}
+
+	log.Debug("user was successfully found in the database", "user", user)
+
+	if validPass := utils.CheckHashing(req.Password, user.HashPassword); !validPass {
+		log.Error("incorrect password")
+		return nil, storages.ErrInvalidLoginData
+	}
+
+	log.Debug("password has been successfully verified")
+
+	var tokenForUser models.LoginResponse
+
+	token, err := a.GenerateToken(user.ID)
+	if err != nil {
+		log.Error("failed to generate token")
+		return nil, err
+	}
+
+	log.Debug("token successfully created", "token", token)
+
+	tokenForUser.Token = token
+
+	log.Info("authorization successful")
+	return &tokenForUser, nil
 }

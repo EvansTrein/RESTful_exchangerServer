@@ -1,5 +1,12 @@
 package models
 
+type User struct {
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	HashPassword string `json:"password"`
+}
+
 type RegisterRequest struct {
 	Email        string `json:"email" binding:"required,email"`
 	Name         string `json:"username" binding:"required,min=3"`
@@ -12,8 +19,8 @@ type RegisterResponse struct {
 }
 
 type LoginRequest struct {
-	Name     string `json:"username"`
-	Password string `json:"password"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
 }
 
 type LoginResponse struct {

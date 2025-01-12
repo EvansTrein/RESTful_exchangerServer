@@ -31,7 +31,7 @@ func New(conf *config.Config, log *slog.Logger) *App {
 		panic(err)
 	}
 
-	auth := servAuth.New(log, db)
+	auth := servAuth.New(log, db, conf.SecretKey)
 	wallet := servWallet.New(log, db, grpcAddress)
 
 	httpServer.InitRouters(auth, wallet)

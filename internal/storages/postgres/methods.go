@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"database/sql"
+	"errors"
 	"log/slog"
 	"strings"
 
@@ -8,7 +10,7 @@ import (
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 )
 
-func (db *PostgresDB) Register(req models.RegisterRequest) (uint, error) {
+func (db *PostgresDB) CreateUser(req models.RegisterRequest) (uint, error) {
 	op := "Database: user registration"
 	log := db.log.With(slog.String("operation", op))
 	log.Debug("Register func call", slog.Any("requets data", req))
@@ -45,7 +47,33 @@ func (db *PostgresDB) Register(req models.RegisterRequest) (uint, error) {
 	return id, nil
 }
 
-func (db *PostgresDB) Login(req models.LoginRequest) (*models.LoginResponse, error) {
+func (db *PostgresDB) SearchUser(req models.LoginRequest) (*models.User, error) {
+	op := "Database: user login"
+	log := db.log.With(slog.String("operation", op))
+	log.Debug("Login func call", slog.Any("requets data", req))
 
-	return &models.LoginResponse{}, nil
+	query := `SELECT id, name, email, password_hash
+		FROM users
+		WHERE email = $1;`
+
+	stmt, err := db.db.Prepare(query)
+	if err != nil {
+		log.Error("failed to prepare SQL query", "error", err)
+		return nil, err
+	}
+	defer stmt.Close()
+
+	var user models.User
+	err = stmt.QueryRow(req.Email).Scan(&user.ID, &user.Name, &user.Email, &user.HashPassword)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Warn("user with this email is not in the database", "email", req.Email)
+			return nil, storages.ErrUserNotFound
+		}
+		log.Error("fail to execute SQL query", "error", err)
+		return nil, err
+	}
+
+	log.Info("database successfully found the user")
+	return &user, nil
 }
