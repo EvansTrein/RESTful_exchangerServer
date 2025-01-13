@@ -32,6 +32,29 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 
 		log.Debug("request data has been successfully validated", "data", req)
 
+		userID, exists := ctx.Get("userID")
+		if !exists {
+			ctx.JSON(500, models.HandlerResponse{
+                Status:  http.StatusInternalServerError,
+                Error:   "userID not found in context",
+                Message: "failed to retrieve user id from context ",
+            })
+            return
+		}
+
+		userIdUint, ok := userID.(uint)
+        if !ok {
+            ctx.JSON(500, models.HandlerResponse{
+                Status:  http.StatusInternalServerError,
+                Error:   "invalid userID type in context",
+                Message: "failed to convert user id to the required data type",
+            })
+            return
+        }
+
+		req.UserID = userIdUint
+		log.Debug("user id was successfully obtained from the context and added to the request", "userID", userIdUint)
+
 		result, err := serv.Exchange(req)
 
 		if err != nil {

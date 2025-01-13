@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -21,7 +22,7 @@ func (a *Auth) GenerateToken(id uint) (string, error) {
 	return signedToken, nil
 }
 
-func (a *Auth) ValidateToken(tokenString string) (*jwt.Token, error) {
+func (a *Auth) ParseToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("token unexpected signing method: %v", token.Header["alg"])
@@ -36,4 +37,18 @@ func (a *Auth) ValidateToken(tokenString string) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+func (a *Auth) TokenPayloadExtraction(token *jwt.Token) (*models.PayloadToken, error) {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("failed to parse token claims")
+	}
+
+	userId, ok := claims["userID"].(float64) 
+	if !ok {
+		return nil, fmt.Errorf("failed to extract userID from token")
+	}
+
+	return &models.PayloadToken{UserID: uint(userId)}, nil
 }

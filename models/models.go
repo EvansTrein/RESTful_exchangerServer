@@ -27,6 +27,10 @@ type LoginResponse struct {
 	Token string `json:"token"`
 }
 
+type PayloadToken struct {
+	UserID uint `json:"id"`
+}
+
 type BalanceRequest struct {
 	UserID int `json:"id"`
 }
@@ -52,7 +56,7 @@ type ExchangeRatesResponse struct {
 }
 
 type ExchangeRequest struct {
-	UserID       int     `json:"id" binding:"required"`
+	UserID       uint    `json:"id"`
 	FromCurrency string  `json:"from_currency" binding:"required"`
 	ToCurrency   string  `json:"to_currency" binding:"required"`
 	Amount       float32 `json:"amount" binding:"required"`
