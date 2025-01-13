@@ -3,6 +3,7 @@ package services
 import (
 	"log/slog"
 
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	grpcclient "github.com/EvansTrein/RESTful_exchangerServer/pkg/gRPCclient"
@@ -14,10 +15,10 @@ type Wallet struct {
 	db         storages.StoreWallet
 }
 
-func New(log *slog.Logger, db storages.StoreWallet, pathGRPC string) *Wallet {
+func New(log *slog.Logger, db storages.StoreWallet, conf *config.Services) *Wallet {
 	log.Debug("service Wallet: started creating")
 	
-	client, err := grpcclient.New(log, pathGRPC)
+	client, err := grpcclient.New(log, conf.AddressGRPC, conf.PortGRPC)
 	if err != nil {
 		panic(err)
 	}

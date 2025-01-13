@@ -19,8 +19,6 @@ type App struct {
 	db     *postgres.PostgresDB
 }
 
-const grpcAddress = "localhost:44000"
-
 func New(conf *config.Config, log *slog.Logger) *App {
 	log.Debug("application: creation is started")
 
@@ -32,7 +30,7 @@ func New(conf *config.Config, log *slog.Logger) *App {
 	}
 
 	auth := servAuth.New(log, db, conf.SecretKey)
-	wallet := servWallet.New(log, db, grpcAddress)
+	wallet := servWallet.New(log, db, &conf.Services)
 
 	httpServer.InitRouters(auth, wallet)
 

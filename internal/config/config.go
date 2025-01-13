@@ -14,6 +14,7 @@ type Config struct {
 	StoragePath string `env:"STORAGE_PATH" env-required:"true"`
 	SecretKey   string `env:"SECRET_KEY" env-required:"true"`
 	HTTPServer  `env-prefix:"HTTP_"`
+	Services    `env-prefix:"SERVICES_"`
 }
 
 type HTTPServer struct {
@@ -23,6 +24,11 @@ type HTTPServer struct {
 	ReadTimeout       time.Duration `env:"READ_TIMEOUT"`
 	WriteTimeout      time.Duration `env:"WRITE_TIMEOUT"`
 	IdleTimeout       time.Duration `env:"IDLE_TIMEOUT"`
+}
+
+type Services struct {
+	AddressGRPC string `env:"ADDRESS_GRPC_SERVER"`
+	PortGRPC    string `env:"PORT_GRPC_SERVER"`
 }
 
 func MustLoad() *Config {

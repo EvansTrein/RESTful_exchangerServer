@@ -30,12 +30,13 @@ type ClientGRPC interface {
 }
 
 type ServerGRPC struct {
-	log  *slog.Logger
-	conn *grpc.ClientConn
+	log     *slog.Logger
+	conn    *grpc.ClientConn
 }
 
-func New(log *slog.Logger, grpcAddr string) (*ServerGRPC, error) {
-	log.Debug("gRPC server: started creating")
+func New(log *slog.Logger, address, port string) (*ServerGRPC, error) {
+	grpcAddr := fmt.Sprintf("%s:%s", address, port)
+	log.Debug("gRPC server: started creating", "address", grpcAddr)
 
 	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
