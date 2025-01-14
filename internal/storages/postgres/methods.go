@@ -77,3 +77,46 @@ func (db *PostgresDB) SearchUser(req models.LoginRequest) (*models.User, error) 
 	log.Info("database successfully found the user")
 	return &user, nil
 }
+
+func (db *PostgresDB) AllAccountsBalance(userId uint) (map[string]float32, error){
+	op := "Database: balancing all accounts "
+	log := db.log.With(slog.String("operation", op))
+	log.Debug("AllAccountsBalance func call", slog.Any("requets data", userId))
+
+	query := `SELECT currency_code, balance
+		FROM accounts
+		WHERE user_id = $1;`
+
+	stmt, err := db.db.Prepare(query)
+	if err != nil {
+		log.Error("failed to prepare SQL query", "error", err)
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(userId)
+    if err != nil {
+        log.Error("failed to execute SQL query", "error", err)
+        return nil, err
+    }
+    defer rows.Close()
+
+	accounts := make(map[string]float32)
+    for rows.Next() {
+        var currencyCode string
+        var balance float32
+        if err := rows.Scan(&currencyCode, &balance); err != nil {
+            log.Error("failed to scan row", "error", err)
+            return nil, err
+        }
+        accounts[currencyCode] = balance
+    }
+
+	if err := rows.Err(); err != nil {
+        log.Error("error during rows iteration", "error", err)
+        return nil, err
+    }
+
+	log.Info("database successfully returned data on all accounts")
+	return accounts, nil
+}

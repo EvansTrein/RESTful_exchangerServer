@@ -47,8 +47,23 @@ func (w *Wallet) Stop() error {
 }
 
 func (w *Wallet) Balance(req models.BalanceRequest) (*models.BalanceResponse, error) {
+	op := "service Wallet: getting the balance of all accounts"
+	log := w.log.With(slog.String("operation", op))
+	log.Debug("Balance func call", slog.Any("requets data", req))
 
-	return &models.BalanceResponse{}, nil
+	accounts, err := w.db.AllAccountsBalance(req.UserID)
+	if err != nil {
+		log.Error("failed to get the balance of all accounts from the database", "error", err)
+		return nil, err
+	}
+
+	log.Debug("balance data for all accounts successfully obtained from the database", "accounts", accounts)
+
+	var resp models.BalanceResponse
+	resp.Balance = accounts
+
+	log.Info("balance data for all accounts successfully sent")
+	return &resp, nil
 }
 
 func (w *Wallet) Deposit(req models.DepositRequest) (*models.DepositResponse, error) {

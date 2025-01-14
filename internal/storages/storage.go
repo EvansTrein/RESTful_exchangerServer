@@ -22,5 +22,5 @@ type StoreAuth interface {
 }
 
 type StoreWallet interface {
-
+	AllAccountsBalance (userId uint) (map[string]float32, error)
 }

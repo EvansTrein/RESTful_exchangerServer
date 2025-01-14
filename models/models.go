@@ -32,7 +32,7 @@ type PayloadToken struct {
 }
 
 type BalanceRequest struct {
-	UserID int `json:"id"`
+	UserID uint `json:"id"`
 }
 
 type BalanceResponse struct {

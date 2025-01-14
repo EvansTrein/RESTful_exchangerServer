@@ -37,7 +37,7 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 			ctx.JSON(500, models.HandlerResponse{
                 Status:  http.StatusInternalServerError,
                 Error:   "userID not found in context",
-                Message: "failed to retrieve user id from context ",
+                Message: "failed to retrieve user id from context",
             })
             return
 		}
