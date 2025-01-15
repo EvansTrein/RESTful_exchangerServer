@@ -72,7 +72,7 @@ func (w *Wallet) Deposit(ctx context.Context, req models.DepositRequest) (*model
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Deposit func call", slog.Any("requets data", req))
 
-	newBalance, err := w.db.ReplenishAccount(ctx, req)
+	newBalance, err := w.db.Deposit(ctx, req)
 	if err != nil {
 		log.Error("failed to replenish the account in the database", "error", err)
 		return nil, err

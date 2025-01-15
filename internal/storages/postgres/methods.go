@@ -124,7 +124,7 @@ func (db *PostgresDB) AllAccountsBalance(ctx context.Context, userId uint) (map[
 	return accounts, nil
 }
 
-func (db *PostgresDB) ReplenishAccount(ctx context.Context, req models.DepositRequest) (map[string]float32, error) {
+func (db *PostgresDB) Deposit(ctx context.Context, req models.DepositRequest) (map[string]float32, error) {
 	op := "Database: account top-up "
 	log := db.log.With(slog.String("operation", op))
 	log.Debug("ReplenishAccount func call", slog.Any("requets data", req))
