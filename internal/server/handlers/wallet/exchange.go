@@ -23,7 +23,6 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 		log.Debug("request received")
 
 		var req models.ExchangeRequest
-
 		if err := ctx.ShouldBindJSON(&req); err != nil {
 			log.Warn("fail BindJSON", "error", err)
 			ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error(), Message: "invalid data"})

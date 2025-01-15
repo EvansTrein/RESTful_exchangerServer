@@ -67,8 +67,24 @@ func (w *Wallet) Balance(req models.BalanceRequest) (*models.BalanceResponse, er
 }
 
 func (w *Wallet) Deposit(req models.DepositRequest) (*models.DepositResponse, error) {
+	op := "service Wallet: account replenishment"
+	log := w.log.With(slog.String("operation", op))
+	log.Debug("Deposit func call", slog.Any("requets data", req))
 
-	return &models.DepositResponse{}, nil
+	newBalance, err := w.db.ReplenishAccount(req)
+	if err != nil {
+		log.Error("failed to replenish the account in the database", "error", err)
+		return nil, err
+	}
+
+	log.Debug("account was successfully funded", "new balance", newBalance)
+	
+	var resp models.DepositResponse
+	resp.Message = "account topped up successfully"
+	resp.NewBalance = newBalance
+
+	log.Info("account topped up successfully")
+	return &resp, nil
 }
 
 func (w *Wallet) Withdraw(req models.WithdrawRequest) (*models.WithdrawResponse, error) {

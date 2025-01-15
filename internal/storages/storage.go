@@ -13,7 +13,7 @@ var (
 	ErrInvalidLoginData = errors.New("invalid email or password")
 
 	// errors StoreWallet
-
+	ErrCurrencyNotFound = errors.New("currency not found")
 )
 
 type StoreAuth interface {
@@ -22,5 +22,6 @@ type StoreAuth interface {
 }
 
 type StoreWallet interface {
-	AllAccountsBalance (userId uint) (map[string]float32, error)
+	AllAccountsBalance(userId uint) (map[string]float32, error)
+	ReplenishAccount(req models.DepositRequest) (map[string]float32, error)
 }

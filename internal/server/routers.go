@@ -24,7 +24,7 @@ func (s *HttpServer) InitRouters(auth *servAuth.Auth, wallet *servWallet.Wallet)
 	walletRouters.Use(handler.LoggingMiddleware(s.log, auth))
 	// walletRouters.Use(handler.TimeoutMiddleware(s.log))
 	walletRouters.GET("/balance", handlerWallet.Balance(s.log, wallet))
-	walletRouters.POST("/wallet/deposit", handlerWallet.DepositHandler(s.log, wallet))
+	walletRouters.POST("/wallet/deposit", handlerWallet.Deposit(s.log, wallet))
 	walletRouters.POST("/wallet/withdraw", handlerWallet.WithdrawHandler(s.log, wallet))
 
 	walletRouters.GET("/exchange/rates", handlerWallet.ExchangeRates(s.log, wallet))
