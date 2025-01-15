@@ -19,8 +19,8 @@ var (
 )
 
 type StoreAuth interface {
-	CreateUser(req models.RegisterRequest) (uint, error)
-	SearchUser(req models.LoginRequest) (*models.User, error)
+	CreateUser(ctx context.Context, req models.RegisterRequest) (uint, error)
+	SearchUser(ctx context.Context, req models.LoginRequest) (*models.User, error)
 }
 
 type StoreWallet interface {

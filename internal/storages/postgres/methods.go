@@ -6,12 +6,13 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 )
 
-func (db *PostgresDB) CreateUser(req models.RegisterRequest) (uint, error) {
+func (db *PostgresDB) CreateUser(ctx context.Context, req models.RegisterRequest) (uint, error) {
 	op := "Database: user registration"
 	log := db.log.With(slog.String("operation", op))
 	log.Debug("Register func call", slog.Any("requets data", req))
@@ -27,7 +28,7 @@ func (db *PostgresDB) CreateUser(req models.RegisterRequest) (uint, error) {
 	CROSS JOIN new_user
 	RETURNING user_id;`
 
-	stmt, err := db.db.Prepare(query)
+	stmt, err := db.db.PrepareContext(ctx, query)
 	if err != nil {
 		log.Error("failed to prepare SQL query", "error", err)
 		return 0, err
@@ -35,7 +36,7 @@ func (db *PostgresDB) CreateUser(req models.RegisterRequest) (uint, error) {
 	defer stmt.Close()
 
 	var id uint
-	err = stmt.QueryRow(req.Name, req.Email, req.HashPassword).Scan(&id)
+	err = stmt.QueryRowContext(ctx, req.Name, req.Email, req.HashPassword).Scan(&id)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value") {
 			return 0, storages.ErrEmailAlreadyExists
@@ -48,7 +49,7 @@ func (db *PostgresDB) CreateUser(req models.RegisterRequest) (uint, error) {
 	return id, nil
 }
 
-func (db *PostgresDB) SearchUser(req models.LoginRequest) (*models.User, error) {
+func (db *PostgresDB) SearchUser(ctx context.Context, req models.LoginRequest) (*models.User, error) {
 	op := "Database: user login"
 	log := db.log.With(slog.String("operation", op))
 	log.Debug("Login func call", slog.Any("requets data", req))
@@ -57,7 +58,8 @@ func (db *PostgresDB) SearchUser(req models.LoginRequest) (*models.User, error) 
 		FROM users
 		WHERE email = $1;`
 
-	stmt, err := db.db.Prepare(query)
+	time.Sleep(time.Second * 7)
+	stmt, err := db.db.PrepareContext(ctx, query)
 	if err != nil {
 		log.Error("failed to prepare SQL query", "error", err)
 		return nil, err
@@ -65,7 +67,7 @@ func (db *PostgresDB) SearchUser(req models.LoginRequest) (*models.User, error) 
 	defer stmt.Close()
 
 	var user models.User
-	err = stmt.QueryRow(req.Email).Scan(&user.ID, &user.Name, &user.Email, &user.HashPassword)
+	err = stmt.QueryRowContext(ctx, req.Email).Scan(&user.ID, &user.Name, &user.Email, &user.HashPassword)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Warn("user with this email is not in the database", "email", req.Email)

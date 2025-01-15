@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type registerServ interface {
-	Register(req models.RegisterRequest) (*models.RegisterResponse, error)
+	Register(ctx context.Context, req models.RegisterRequest) (*models.RegisterResponse, error)
 }
 
 func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
@@ -33,22 +34,30 @@ func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 
 		log.Debug("request data has been successfully validated", "data", req)
 
-		result, err := serv.Register(req)
+		result, err := serv.Register(ctx.Request.Context(), req)
 		if err != nil {
 			switch err {
 			case storages.ErrEmailAlreadyExists:
 				log.Warn("failed to create user", "error", err)
 				ctx.JSON(400, models.HandlerResponse{
-					Status: http.StatusBadRequest, 
-					Error: err.Error(), 
+					Status:  http.StatusBadRequest,
+					Error:   err.Error(),
 					Message: "failed to save a new user",
+				})
+				return
+			case context.DeadlineExceeded:
+				log.Error("failed to create user", "error", err)
+				ctx.JSON(504, models.HandlerResponse{
+					Status:  http.StatusGatewayTimeout,
+					Error:   err.Error(),
+					Message: "the waiting time for a response from the internal service has expired",
 				})
 				return
 			default:
 				log.Error("failed to create user", "error", err)
 				ctx.JSON(500, models.HandlerResponse{
-					Status: http.StatusInternalServerError, 
-					Error: err.Error(), 
+					Status:  http.StatusInternalServerError,
+					Error:   err.Error(),
 					Message: "failed to save a new user",
 				})
 				return

@@ -19,11 +19,11 @@ func (s *HttpServer) InitRouters(conf *config.HTTPServer, auth *servAuth.Auth, w
 	authRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
 	walletRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
 
+	authRouters.Use(handler.TimeoutMiddleware(s.log, conf))
 	authRouters.POST("/register", handlerAuth.Register(s.log, auth))
 	authRouters.POST("/login", handlerAuth.Login(s.log, auth))
 
 	walletRouters.Use(handler.TimeoutMiddleware(s.log, conf))
-
 	walletRouters.Use(handler.LoggingMiddleware(s.log, auth))
 	walletRouters.GET("/balance", handlerWallet.Balance(s.log, wallet))
 	walletRouters.POST("/wallet/deposit", handlerWallet.Deposit(s.log, wallet))

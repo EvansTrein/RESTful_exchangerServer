@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,7 @@ func TimeoutMiddleware(log *slog.Logger, conf *config.HTTPServer) gin.HandlerFun
 	return func(ctx *gin.Context) {
 		op := "TimeoutMiddleware: call"
 
-		newCtx, cancel := context.WithTimeout(ctx.Request.Context(), conf.WriteTimeout)
+		newCtx, cancel := context.WithTimeout(ctx.Request.Context(), time.Second * 5)
 		defer cancel()
 
 		ctx.Request = ctx.Request.WithContext(newCtx)

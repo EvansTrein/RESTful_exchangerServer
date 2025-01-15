@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
@@ -25,7 +26,7 @@ func New(log *slog.Logger, db storages.StoreAuth, secretKey string) *Auth {
 	}
 }
 
-func (a *Auth) Register(req models.RegisterRequest) (*models.RegisterResponse, error) {
+func (a *Auth) Register(ctx context.Context, req models.RegisterRequest) (*models.RegisterResponse, error) {
 	op := "service Auth: user registration"
 	log := a.log.With(slog.String("operation", op))
 	log.Debug("Register func call", slog.Any("requets data", req))
@@ -38,7 +39,7 @@ func (a *Auth) Register(req models.RegisterRequest) (*models.RegisterResponse, e
 
 	req.HashPassword = hash
 
-	id, err := a.db.CreateUser(req)
+	id, err := a.db.CreateUser(ctx, req)
 	if err != nil {
 		log.Error("failed to save a new user in the database", "error", err)
 		return nil, err
@@ -48,12 +49,12 @@ func (a *Auth) Register(req models.RegisterRequest) (*models.RegisterResponse, e
 	return &models.RegisterResponse{Message: "user successfully created", UserID: id}, nil
 }
 
-func (a *Auth) Login(req models.LoginRequest) (*models.LoginResponse, error) {
+func (a *Auth) Login(ctx context.Context, req models.LoginRequest) (*models.LoginResponse, error) {
 	op := "service Auth: user login"
 	log := a.log.With(slog.String("operation", op))
 	log.Debug("Login func call", slog.Any("requets data", req))
 
-	user, err := a.db.SearchUser(req)
+	user, err := a.db.SearchUser(ctx, req)
 	if err != nil {
 		log.Warn("failed to find the user in the database", "error", err)
 		return nil, err

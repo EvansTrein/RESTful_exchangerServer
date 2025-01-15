@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type loginServ interface {
-	Login(req models.LoginRequest) (*models.LoginResponse, error)
+	Login(ctx context.Context, req models.LoginRequest) (*models.LoginResponse, error)
 }
 
 func Login(log *slog.Logger, serv loginServ) gin.HandlerFunc {
@@ -33,22 +34,30 @@ func Login(log *slog.Logger, serv loginServ) gin.HandlerFunc {
 
 		log.Debug("request data has been successfully validated", "data", req)
 
-		result, err := serv.Login(req)
+		result, err := serv.Login(ctx.Request.Context(), req)
 		if err != nil {
 			switch err {
 			case storages.ErrUserNotFound:
 				log.Warn("failed to authorize", "error", err)
 				ctx.JSON(404, models.HandlerResponse{
-					Status: http.StatusNotFound, 
-					Error: err.Error(), 
+					Status:  http.StatusNotFound,
+					Error:   err.Error(),
 					Message: "user not found",
+				})
+				return
+			case context.DeadlineExceeded:
+				log.Error("failed to authorize", "error", err)
+				ctx.JSON(504, models.HandlerResponse{
+					Status:  http.StatusGatewayTimeout,
+					Error:   err.Error(),
+					Message: "the waiting time for a response from the internal service has expired",
 				})
 				return
 			default:
 				log.Error("failed to authorize", "error", err)
 				ctx.JSON(500, models.HandlerResponse{
-					Status: http.StatusInternalServerError, 
-					Error: err.Error(), 
+					Status:  http.StatusInternalServerError,
+					Error:   err.Error(),
 					Message: "failed to authorize",
 				})
 				return
