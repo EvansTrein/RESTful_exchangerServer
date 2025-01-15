@@ -58,13 +58,17 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 		result, err := serv.Exchange(ctx.Request.Context(), req)
 
 		if err != nil {
+			// TODO: вернуть 402 если на балансе недостаточно средств
 			// TODO: вернуть 404 если запрошенной валюты нет
-			log.Error("failed to send data", "error", err)
+			// TODO: вернуть 404 если у пользователя нет счета
+			// TODO: вернуть 503 сервер обменника GRPC недоступен
+			// TODO: вернуть 504 если контекст истек
+			log.Error("failed exchange", "error", err)
 			ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
 			return
 		}
 
-		log.Info("data successfully sent")
+		log.Info("currency exchange successfully")
 		ctx.JSON(200, result)
 	}
 }

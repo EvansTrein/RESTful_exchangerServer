@@ -23,8 +23,6 @@ func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 			slog.String("HTTP Method", ctx.Request.Method),
 		)
 		log.Debug("account top-up request received")
-		log.Debug("!!!!!!!!!!!!!!!", "context Handler", ctx)
-		log.Debug("!!!!!!!!!!!!!!!", "context Request", ctx.Request.Context())
 
 		var req models.DepositRequest
 		if err := ctx.ShouldBindJSON(&req); err != nil {

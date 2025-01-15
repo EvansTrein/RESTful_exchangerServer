@@ -69,20 +69,20 @@ type ExchangeGRPC struct {
 }
 
 type ExchangeResponse struct {
-	Message         string          `json:"message"`
-	ExchangedAmount float32         `json:"exchanged_amount"`
-	NewBalance      BalanceResponse `json:"new_balance"`
+	Message         string             `json:"message"`
+	ExchangedAmount float32            `json:"exchanged_amount"`
+	NewBalance      map[string]float32 `json:"new_balance"`
 }
 
 type WithdrawRequest struct {
-	UserID   int     `json:"id"`
-	Currency string  `json:"currency"`
-	Amount   float32 `json:"amount"`
+	UserID   uint    `json:"id"`
+	Amount   float32 `json:"amount" binding:"required,gt=0"`
+	Currency string  `json:"currency" binding:"required,min=3"`
 }
 
 type WithdrawResponse struct {
-	Message    string          `json:"message"`
-	NewBalance BalanceResponse `json:"new_balance"`
+	Message    string             `json:"message"`
+	NewBalance map[string]float32 `json:"new_balance"`
 }
 
 type HandlerResponse struct {

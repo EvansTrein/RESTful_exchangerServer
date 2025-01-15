@@ -88,7 +88,7 @@ func (w *Wallet) Deposit(ctx context.Context, req models.DepositRequest) (*model
 	return &resp, nil
 }
 
-func (w *Wallet) Withdraw(req models.WithdrawRequest) (*models.WithdrawResponse, error) {
+func (w *Wallet) Withdraw(ctx context.Context, req models.WithdrawRequest) (*models.WithdrawResponse, error) {
 
 	return &models.WithdrawResponse{}, nil
 }
@@ -97,6 +97,8 @@ func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*mod
 	op := "service Wallet: currency exchange request"
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Exchange func call", slog.Any("requets data", req))
+
+	// TODO: проверить есть ли курс в Redis
 
 	var resp models.ExchangeResponse
 	var rate models.ExchangeGRPC
