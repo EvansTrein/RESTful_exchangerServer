@@ -1,15 +1,17 @@
 package handlers
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
 
 type depositServ interface {
-	Deposit(req models.DepositRequest) (*models.DepositResponse, error)
+	Deposit(ctx context.Context, req models.DepositRequest) (*models.DepositResponse, error)
 }
 
 func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
@@ -21,6 +23,8 @@ func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 			slog.String("HTTP Method", ctx.Request.Method),
 		)
 		log.Debug("account top-up request received")
+		log.Debug("!!!!!!!!!!!!!!!", "context Handler", ctx)
+		log.Debug("!!!!!!!!!!!!!!!", "context Request", ctx.Request.Context())
 
 		var req models.DepositRequest
 		if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -30,39 +34,66 @@ func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 		}
 
 		log.Debug("request data has been successfully validated", "data", req)
-		
+
 		userID, exists := ctx.Get("userID")
 		if !exists {
 			ctx.JSON(500, models.HandlerResponse{
-                Status:  http.StatusInternalServerError,
-                Error:   "userID not found in context",
-                Message: "failed to retrieve user id from context",
-            })
-            return
+				Status:  http.StatusInternalServerError,
+				Error:   "userID not found in context",
+				Message: "failed to retrieve user id from context",
+			})
+			return
 		}
 
 		userIdUint, ok := userID.(uint)
-        if !ok {
-            ctx.JSON(500, models.HandlerResponse{
-                Status:  http.StatusInternalServerError,
-                Error:   "invalid userID type in context",
-                Message: "failed to convert user id to the required data type",
-            })
-            return
-        }
+		if !ok {
+			ctx.JSON(500, models.HandlerResponse{
+				Status:  http.StatusInternalServerError,
+				Error:   "invalid userID type in context",
+				Message: "failed to convert user id to the required data type",
+			})
+			return
+		}
 
 		req.UserID = userIdUint
 		log.Debug("user id was successfully obtained from the context and added to the request")
 
-		result, err := serv.Deposit(req)
+		result, err := serv.Deposit(ctx.Request.Context(), req)
 		if err != nil {
-			log.Error("failed to send data", "error", err)
-			ctx.JSON(500, models.HandlerResponse{
-				Status: http.StatusInternalServerError, 
-				Error: err.Error(),
-				Message: "failed to deposit",
-			})
-			return
+			switch err {
+			case storages.ErrCurrencyNotFound:
+				log.Warn("failed to deposit", "error", err)
+				ctx.JSON(404, models.HandlerResponse{
+					Status:  http.StatusNotFound,
+					Error:   err.Error(),
+					Message: "currency not found",
+				})
+				return
+			case storages.ErrAccountNotFound:
+				log.Error("failed to deposit", "error", err)
+				ctx.JSON(404, models.HandlerResponse{
+					Status:  http.StatusNotFound,
+					Error:   err.Error(),
+					Message: "account not found",
+				})
+				return
+			case context.DeadlineExceeded:
+				log.Error("failed to deposit", "error", err)
+				ctx.JSON(504, models.HandlerResponse{
+					Status:  http.StatusGatewayTimeout,
+					Error:   err.Error(),
+					Message: "the waiting time for a response from the internal service has expired",
+				})
+				return
+			default:
+				log.Error("failed to deposit", "error", err)
+				ctx.JSON(500, models.HandlerResponse{
+					Status:  http.StatusInternalServerError,
+					Error:   err.Error(),
+					Message: "failed to deposit",
+				})
+				return
+			}
 		}
 
 		log.Info("deposit successful")

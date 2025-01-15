@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
@@ -17,12 +18,12 @@ type Wallet struct {
 
 func New(log *slog.Logger, db storages.StoreWallet, conf *config.Services) *Wallet {
 	log.Debug("service Wallet: started creating")
-	
+
 	client, err := grpcclient.New(log, conf.AddressGRPC, conf.PortGRPC)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	log.Info("service Wallet: successfully created")
 	return &Wallet{
 		log:        log,
@@ -46,12 +47,12 @@ func (w *Wallet) Stop() error {
 	return nil
 }
 
-func (w *Wallet) Balance(req models.BalanceRequest) (*models.BalanceResponse, error) {
+func (w *Wallet) Balance(ctx context.Context, req models.BalanceRequest) (*models.BalanceResponse, error) {
 	op := "service Wallet: getting the balance of all accounts"
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Balance func call", slog.Any("requets data", req))
 
-	accounts, err := w.db.AllAccountsBalance(req.UserID)
+	accounts, err := w.db.AllAccountsBalance(ctx, req.UserID)
 	if err != nil {
 		log.Error("failed to get the balance of all accounts from the database", "error", err)
 		return nil, err
@@ -66,19 +67,19 @@ func (w *Wallet) Balance(req models.BalanceRequest) (*models.BalanceResponse, er
 	return &resp, nil
 }
 
-func (w *Wallet) Deposit(req models.DepositRequest) (*models.DepositResponse, error) {
+func (w *Wallet) Deposit(ctx context.Context, req models.DepositRequest) (*models.DepositResponse, error) {
 	op := "service Wallet: account replenishment"
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Deposit func call", slog.Any("requets data", req))
 
-	newBalance, err := w.db.ReplenishAccount(req)
+	newBalance, err := w.db.ReplenishAccount(ctx, req)
 	if err != nil {
 		log.Error("failed to replenish the account in the database", "error", err)
 		return nil, err
 	}
 
 	log.Debug("account was successfully funded", "new balance", newBalance)
-	
+
 	var resp models.DepositResponse
 	resp.Message = "account topped up successfully"
 	resp.NewBalance = newBalance
@@ -88,11 +89,11 @@ func (w *Wallet) Deposit(req models.DepositRequest) (*models.DepositResponse, er
 }
 
 func (w *Wallet) Withdraw(req models.WithdrawRequest) (*models.WithdrawResponse, error) {
-	
+
 	return &models.WithdrawResponse{}, nil
 }
 
-func (w *Wallet) Exchange(req models.ExchangeRequest) (*models.ExchangeResponse, error) {
+func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*models.ExchangeResponse, error) {
 	op := "service Wallet: currency exchange request"
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Exchange func call", slog.Any("requets data", req))
@@ -103,7 +104,7 @@ func (w *Wallet) Exchange(req models.ExchangeRequest) (*models.ExchangeResponse,
 	rate.FromCurrency = req.FromCurrency
 	rate.ToCurrency = req.ToCurrency
 
-	if err := w.clientGRPC.ExchangeRate(&rate); err != nil {
+	if err := w.clientGRPC.ExchangeRate(ctx, &rate); err != nil {
 		log.Error("failed to get data from GRPC server", "error", err)
 		return nil, err
 	}
@@ -113,18 +114,18 @@ func (w *Wallet) Exchange(req models.ExchangeRequest) (*models.ExchangeResponse,
 	// TODO: тут получен курс, далее обращение к БД
 
 	resp.Message = "data successfully received"
-	
+
 	return &resp, nil
 }
 
-func (w *Wallet) ExchangeRates() (*models.ExchangeRatesResponse, error) {
+func (w *Wallet) ExchangeRates(ctx context.Context) (*models.ExchangeRatesResponse, error) {
 	op := "service Wallet: obtaining all exchange rates"
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("ExchangeRates func call")
 
 	var resp models.ExchangeRatesResponse
 
-	if err := w.clientGRPC.GetAllRates(&resp); err != nil {
+	if err := w.clientGRPC.GetAllRates(ctx, &resp); err != nil {
 		log.Error("failed to get data from GRPC server", "error", err)
 		return nil, err
 	}

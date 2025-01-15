@@ -6,19 +6,20 @@ import (
 
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/net/context"
 )
 
 type exchangeServ interface {
-	Exchange(req models.ExchangeRequest) (*models.ExchangeResponse, error)
+	Exchange(ctx context.Context, req models.ExchangeRequest) (*models.ExchangeResponse, error)
 }
 
 func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Exchange: call"
 		log = log.With(
-			slog.String("operation", op), 
+			slog.String("operation", op),
 			slog.String("apiPath", ctx.FullPath()),
-			slog.String("HTTP Method", ctx.Request.Method),	
+			slog.String("HTTP Method", ctx.Request.Method),
 		)
 		log.Debug("request received")
 
@@ -27,34 +28,34 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 			log.Warn("fail BindJSON", "error", err)
 			ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error(), Message: "invalid data"})
 			return
-		} 
+		}
 
 		log.Debug("request data has been successfully validated", "data", req)
 
 		userID, exists := ctx.Get("userID")
 		if !exists {
 			ctx.JSON(500, models.HandlerResponse{
-                Status:  http.StatusInternalServerError,
-                Error:   "userID not found in context",
-                Message: "failed to retrieve user id from context",
-            })
-            return
+				Status:  http.StatusInternalServerError,
+				Error:   "userID not found in context",
+				Message: "failed to retrieve user id from context",
+			})
+			return
 		}
 
 		userIdUint, ok := userID.(uint)
-        if !ok {
-            ctx.JSON(500, models.HandlerResponse{
-                Status:  http.StatusInternalServerError,
-                Error:   "invalid userID type in context",
-                Message: "failed to convert user id to the required data type",
-            })
-            return
-        }
+		if !ok {
+			ctx.JSON(500, models.HandlerResponse{
+				Status:  http.StatusInternalServerError,
+				Error:   "invalid userID type in context",
+				Message: "failed to convert user id to the required data type",
+			})
+			return
+		}
 
 		req.UserID = userIdUint
 		log.Debug("user id was successfully obtained from the context and added to the request", "userID", userIdUint)
 
-		result, err := serv.Exchange(req)
+		result, err := serv.Exchange(ctx.Request.Context(), req)
 
 		if err != nil {
 			// TODO: вернуть 404 если запрошенной валюты нет
@@ -62,7 +63,6 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 			ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
 			return
 		}
-
 
 		log.Info("data successfully sent")
 		ctx.JSON(200, result)

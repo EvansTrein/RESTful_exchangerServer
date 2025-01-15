@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type exchangeRatesServ interface {
-	ExchangeRates() (*models.ExchangeRatesResponse, error)
+	ExchangeRates(ctx context.Context) (*models.ExchangeRatesResponse, error)
 }
 
 func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
@@ -23,7 +24,7 @@ func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
 		)
 		log.Debug("request received")
 
-		result, err := serv.ExchangeRates()
+		result, err := serv.ExchangeRates(ctx.Request.Context())
 		if err != nil {
 			switch err {
 			case grpcclient.ErrServerUnavailable:
@@ -35,7 +36,7 @@ func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
 				})
 				return
 			case grpcclient.ErrServerTimeOut:
-				log.Warn("failed to send data", "error", err)
+				log.Error("failed to send data", "error", err)
 				ctx.JSON(504, models.HandlerResponse{
 					Status: http.StatusGatewayTimeout, 
 					Error: err.Error(), 

@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
 	handler "github.com/EvansTrein/RESTful_exchangerServer/internal/server/handlers"
 	handlerAuth "github.com/EvansTrein/RESTful_exchangerServer/internal/server/handlers/auth"
 	handlerWallet "github.com/EvansTrein/RESTful_exchangerServer/internal/server/handlers/wallet"
@@ -14,15 +15,16 @@ const (
 	apiVersion = "v1"
 )
 
-func (s *HttpServer) InitRouters(auth *servAuth.Auth, wallet *servWallet.Wallet) {
+func (s *HttpServer) InitRouters(conf *config.HTTPServer, auth *servAuth.Auth, wallet *servWallet.Wallet) {
 	authRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
 	walletRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
-	
+
 	authRouters.POST("/register", handlerAuth.Register(s.log, auth))
 	authRouters.POST("/login", handlerAuth.Login(s.log, auth))
 
+	walletRouters.Use(handler.TimeoutMiddleware(s.log, conf))
+
 	walletRouters.Use(handler.LoggingMiddleware(s.log, auth))
-	// walletRouters.Use(handler.TimeoutMiddleware(s.log))
 	walletRouters.GET("/balance", handlerWallet.Balance(s.log, wallet))
 	walletRouters.POST("/wallet/deposit", handlerWallet.Deposit(s.log, wallet))
 	walletRouters.POST("/wallet/withdraw", handlerWallet.WithdrawHandler(s.log, wallet))

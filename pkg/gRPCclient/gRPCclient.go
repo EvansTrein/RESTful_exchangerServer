@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	pb "github.com/EvansTrein/proto-exchange/exchange"
@@ -16,22 +15,20 @@ import (
 )
 
 var (
-	gRPCTimeoutMethodCall = time.Second * 5
-
 	ErrServerUnavailable = errors.New("gRPC server is unavailable")
 	ErrServerTimeOut     = errors.New("gRPC method call execution timeout expired")
 	ErrServerNotCurrency = errors.New("gRPC currency is not supported")
 )
 
 type ClientGRPC interface {
-	GetAllRates(req *models.ExchangeRatesResponse) error
-	ExchangeRate(req *models.ExchangeGRPC) error
+	GetAllRates(ctx context.Context, req *models.ExchangeRatesResponse) error
+	ExchangeRate(ctx context.Context, req *models.ExchangeGRPC) error
 	Close() error
 }
 
 type ServerGRPC struct {
-	log     *slog.Logger
-	conn    *grpc.ClientConn
+	log  *slog.Logger
+	conn *grpc.ClientConn
 }
 
 func New(log *slog.Logger, address, port string) (*ServerGRPC, error) {
@@ -62,19 +59,16 @@ func (s *ServerGRPC) Close() error {
 	return nil
 }
 
-func (s *ServerGRPC) GetAllRates(req *models.ExchangeRatesResponse) error {
+func (s *ServerGRPC) GetAllRates(ctx context.Context, req *models.ExchangeRatesResponse) error {
 	op := "gRPC server: obtaining all exchange rates"
 	log := s.log.With(slog.String("operation", op))
 	log.Debug("GetAllRates func call")
 
 	client := pb.NewExchangeServiceClient(s.conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), gRPCTimeoutMethodCall)
-	defer cancel()
-
 	callGRPC, err := client.GetExchangeRates(ctx, &pb.Empty{})
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
+		if status.Code(err) == codes.DeadlineExceeded {
 			log.Warn("timeout time for response from gRPC server has expired")
 			return ErrServerTimeOut
 		} else {
@@ -93,15 +87,12 @@ func (s *ServerGRPC) GetAllRates(req *models.ExchangeRatesResponse) error {
 	return nil
 }
 
-func (s *ServerGRPC) ExchangeRate(req *models.ExchangeGRPC) error {
+func (s *ServerGRPC) ExchangeRate(ctx context.Context, req *models.ExchangeGRPC) error {
 	op := "gRPC server: currency exchange rate request"
 	log := s.log.With(slog.String("operation", op))
 	log.Debug("ExchangeRate func call")
 
 	client := pb.NewExchangeServiceClient(s.conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), gRPCTimeoutMethodCall)
-	defer cancel()
 
 	var reqForGRPC pb.CurrencyRequest
 
@@ -110,7 +101,7 @@ func (s *ServerGRPC) ExchangeRate(req *models.ExchangeGRPC) error {
 
 	callGRPC, err := client.GetExchangeRateForCurrency(ctx, &reqForGRPC)
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
+		if status.Code(err) == codes.DeadlineExceeded {
 			log.Warn("timeout time for response from gRPC server has expired")
 			return ErrServerTimeOut
 		} else if status.Code(err) == codes.NotFound {

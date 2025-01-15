@@ -32,7 +32,7 @@ func New(conf *config.Config, log *slog.Logger) *App {
 	auth := servAuth.New(log, db, conf.SecretKey)
 	wallet := servWallet.New(log, db, &conf.Services)
 
-	httpServer.InitRouters(auth, wallet)
+	httpServer.InitRouters(&conf.HTTPServer, auth, wallet)
 
 	app := &App{
 		server: httpServer,

@@ -1,6 +1,7 @@
 package storages
 
 import (
+	"context"
 	"errors"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
@@ -8,12 +9,13 @@ import (
 
 var (
 	// errors StoreAuth
-	ErrUserNotFound = errors.New("user not found")
+	ErrUserNotFound       = errors.New("user not found")
 	ErrEmailAlreadyExists = errors.New("email already exists")
-	ErrInvalidLoginData = errors.New("invalid email or password")
+	ErrInvalidLoginData   = errors.New("invalid email or password")
 
 	// errors StoreWallet
 	ErrCurrencyNotFound = errors.New("currency not found")
+	ErrAccountNotFound  = errors.New("account not found")
 )
 
 type StoreAuth interface {
@@ -22,6 +24,6 @@ type StoreAuth interface {
 }
 
 type StoreWallet interface {
-	AllAccountsBalance(userId uint) (map[string]float32, error)
-	ReplenishAccount(req models.DepositRequest) (map[string]float32, error)
+	AllAccountsBalance(ctx context.Context, userId uint) (map[string]float32, error)
+	ReplenishAccount(ctx context.Context, req models.DepositRequest) (map[string]float32, error)
 }
