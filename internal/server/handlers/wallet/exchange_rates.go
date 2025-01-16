@@ -40,6 +40,14 @@ func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
 				ctx.JSON(504, models.HandlerResponse{
 					Status: http.StatusGatewayTimeout, 
 					Error: err.Error(), 
+					Message: "response timeout expired on the GRPC server side",
+				})
+				return
+			case context.DeadlineExceeded:
+				log.Error("failed to send data", "error", err)
+				ctx.JSON(504, models.HandlerResponse{
+					Status:  http.StatusGatewayTimeout,
+					Error:   err.Error(),
 					Message: "the waiting time for a response from the internal service has expired",
 				})
 				return

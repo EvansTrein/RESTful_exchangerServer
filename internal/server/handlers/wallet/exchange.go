@@ -4,7 +4,9 @@ import (
 	"log/slog"
 	"net/http"
 
+	services "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
+	grpcclient "github.com/EvansTrein/RESTful_exchangerServer/pkg/gRPCclient"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/net/context"
 )
@@ -56,16 +58,65 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 		log.Debug("user id was successfully obtained from the context and added to the request", "userID", userIdUint)
 
 		result, err := serv.Exchange(ctx.Request.Context(), req)
-
 		if err != nil {
-			// TODO: вернуть 402 если на балансе недостаточно средств
-			// TODO: вернуть 404 если запрошенной валюты нет
-			// TODO: вернуть 404 если у пользователя нет счета
-			// TODO: вернуть 503 сервер обменника GRPC недоступен
-			// TODO: вернуть 504 если контекст истек
-			log.Error("failed exchange", "error", err)
-			ctx.JSON(500, models.HandlerResponse{Status: http.StatusInternalServerError, Error: err.Error()})
-			return
+			switch err {
+			case services.ErrInsufficientFunds:
+				log.Warn("failed to exchanged", "error", err)
+				ctx.JSON(402, models.HandlerResponse{
+					Status:  http.StatusPaymentRequired,
+					Error:   err.Error(),
+					Message: "insufficient funds",
+				})
+				return
+			case services.ErrAccountNotFound:
+				log.Warn("failed to exchanged", "error", err)
+				ctx.JSON(404, models.HandlerResponse{
+					Status:  http.StatusNotFound,
+					Error:   err.Error(),
+					Message: "no account in this currency",
+				})
+				return
+			case services.ErrCurrencyNotFound:
+				log.Warn("failed to exchanged", "error", err)
+				ctx.JSON(404, models.HandlerResponse{
+					Status:  http.StatusNotFound,
+					Error:   err.Error(),
+					Message: "currency is not supported",
+				})
+				return
+			case grpcclient.ErrServerUnavailable:
+				log.Warn("failed to exchanged", "error", err)
+				ctx.JSON(503, models.HandlerResponse{
+					Status:  http.StatusServiceUnavailable,
+					Error:   err.Error(),
+					Message: "failed to exchanged",
+				})
+				return
+			case grpcclient.ErrServerTimeOut:
+				log.Error("failed to exchanged", "error", err)
+				ctx.JSON(504, models.HandlerResponse{
+					Status:  http.StatusGatewayTimeout,
+					Error:   err.Error(),
+					Message: "response timeout expired on the GRPC server side",
+				})
+				return
+			case context.DeadlineExceeded:
+				log.Error("failed to exchanged", "error", err)
+				ctx.JSON(504, models.HandlerResponse{
+					Status:  http.StatusGatewayTimeout,
+					Error:   err.Error(),
+					Message: "the waiting time for a response from the internal service has expired",
+				})
+				return
+			default:
+				log.Error("failed to exchanged", "error", err)
+				ctx.JSON(500, models.HandlerResponse{
+					Status:  http.StatusInternalServerError,
+					Error:   err.Error(),
+					Message: "failed to exchanged",
+				})
+				return
+			}
 		}
 
 		log.Info("currency exchange successfully")

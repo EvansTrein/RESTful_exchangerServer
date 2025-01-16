@@ -280,3 +280,8 @@ func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountO
 	log.Info("transaction successfully completed")
 	return accounts, nil
 }
+
+func (db *PostgresDB) SaveExchangeRateChanges(ctx context.Context, newData *models.CurrencyExchangeResult) error {
+
+	return nil
+}

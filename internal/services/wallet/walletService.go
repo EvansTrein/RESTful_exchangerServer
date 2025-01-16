@@ -132,25 +132,77 @@ func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*mod
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Exchange func call", slog.Any("requets data", req))
 
+	// TODO: запустить в горутине работу с курсом валют, получением его из Redis или БД и сохранением в Redis
+
+	balanceUser, err := w.db.AllAccountsBalance(ctx, req.UserID)
+	if err != nil {
+		log.Error("failed to get current user balance", "error", err)
+		return nil, err
+	}
+	
+	currentBaseAccountBalance, ok := balanceUser[req.FromCurrency]
+	if !ok {
+		log.Warn("no base currency to exchange", "currency", req.FromCurrency)
+		return nil, ErrAccountNotFound
+	}
+	
+	currentToAccountBalance, ok := balanceUser[req.ToCurrency]
+	if !ok {
+		log.Warn("not to currency exchange", "currency", req.ToCurrency)
+		return nil, ErrCurrencyNotFound
+	}
+
+	if req.Amount > currentBaseAccountBalance {
+		log.Warn("insufficient funds for exchange", "current balance", currentBaseAccountBalance, "requested amount", req.Amount)
+		return nil, ErrInsufficientFunds
+	}
+
+	log.Debug("business logic check successfully completed")
+
 	// TODO: проверить есть ли курс в Redis
 
-	var resp models.ExchangeResponse
 	var rate models.ExchangeGRPC
-
 	rate.FromCurrency = req.FromCurrency
 	rate.ToCurrency = req.ToCurrency
-
+	
 	if err := w.clientGRPC.ExchangeRate(ctx, &rate); err != nil {
 		log.Error("failed to get data from GRPC server", "error", err)
 		return nil, err
 	}
-
+	
 	log.Debug("exchange rate successfully received from gRPC server", "rate from gRPC", rate)
 	// TODO: тут получен курс, сохранить его в Redis
-	// TODO: тут получен курс, далее обращение к БД
+	
+	// collect data to calculate new account balances
+	exchangeData := models.CurrencyExchangeData{
+		BaseBalance: currentBaseAccountBalance,
+		ToBalance: currentToAccountBalance,
+		ExchangeRate: rate.Rate,
+		Amount: req.Amount,
+	}
+	exchangeResult, err := w.CurrencyExchangeLogic(&exchangeData)
+	if err != nil {
+		log.Error("currency exchange failed", "error", err)
+		return nil, err
+	}
+	// TODO: обмен произведен, сохранить изменения в БД
+	exchangeResult.UserID = req.UserID
+	if err := w.db.SaveExchangeRateChanges(ctx, exchangeResult); err != nil {
+		log.Error("failed to save currency exchange changes in the database", "error", err)
+		return nil, err
+	}
 
+	balanceUser[req.FromCurrency] = exchangeResult.NewBaseBalance
+	balanceUser[req.ToCurrency] = exchangeResult.NewToBalance
+	
+	var resp models.ExchangeResponse
 	resp.Message = "data successfully received"
+	resp.ExchangeRate = rate.Rate
+	resp.SpentAccoutn = models.SpentAccoutn{Currency: req.FromCurrency, Amount: req.Amount}
+	resp.ReceivedAccount = models.ReceivedAccount{Currency: req.ToCurrency, Amount: exchangeResult.Received}
+	resp.NewBalance = balanceUser
 
+	log.Info("successfully exchange")
 	return &resp, nil
 }
 

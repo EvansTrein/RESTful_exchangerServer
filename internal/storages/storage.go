@@ -14,4 +14,5 @@ type StoreAuth interface {
 type StoreWallet interface {
 	AllAccountsBalance(ctx context.Context, userId uint) (map[string]float32, error)
 	AccountOperation(ctx context.Context, req *models.AccountOperationRequest) (map[string]float32, error)
+	SaveExchangeRateChanges(ctx context.Context, newData *models.CurrencyExchangeResult) error
 }

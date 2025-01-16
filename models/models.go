@@ -71,7 +71,9 @@ type ExchangeGRPC struct {
 
 type ExchangeResponse struct {
 	Message         string             `json:"message"`
-	ExchangedAmount float32            `json:"exchanged_amount"`
+	ExchangeRate    float32            `json:"exchange_rate"`
+	SpentAccoutn    SpentAccoutn       `json:"spent_accoutn"`
+	ReceivedAccount ReceivedAccount    `json:"received_account"`
 	NewBalance      map[string]float32 `json:"new_balance"`
 }
 
@@ -79,4 +81,28 @@ type HandlerResponse struct {
 	Status  int    `json:"status"`
 	Error   string `json:"error"`
 	Message string `json:"message"`
+}
+
+type CurrencyExchangeData struct {
+	BaseBalance  float32
+	ToBalance    float32
+	ExchangeRate float32
+	Amount       float32
+}
+
+type CurrencyExchangeResult struct {
+	UserID         uint
+	NewBaseBalance float32
+	NewToBalance   float32
+	Received       float32
+}
+
+type SpentAccoutn struct {
+	Currency string  `json:"currency"`
+	Amount   float32 `json:"amount"`
+}
+
+type ReceivedAccount struct {
+	Currency string  `json:"currency"`
+	Amount   float32 `json:"amount"`
 }
