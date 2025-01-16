@@ -5,12 +5,13 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
 
 type withdrawServ interface {
-	Withdraw(ctx context.Context, req models.WithdrawRequest) (*models.WithdrawResponse, error)
+	Withdraw(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error)
 }
 
 func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
@@ -23,7 +24,7 @@ func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
 		)
 		log.Debug("debit withdrawal")
 
-		var req models.WithdrawRequest
+		var req models.AccountOperationRequest
 		if err := ctx.ShouldBindJSON(&req); err != nil {
 			log.Warn("fail BindJSON", "error", err)
 			ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error(), Message: "invalid data"})
@@ -55,19 +56,50 @@ func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
 		req.UserID = userIdUint
 		log.Debug("user id was successfully obtained from the context and added to the request")
 
-		result, err := serv.Withdraw(ctx.Request.Context(), req)
+		result, err := serv.Withdraw(ctx.Request.Context(), &req)
 		if err != nil {
-			// TODO: вернуть 402 если на балансе недостаточно средств
-			// TODO: вернуть 404 если запрошенной валюты нет
-			// TODO: вернуть 404 если у пользователя нет счета
-			// TODO: вернуть 504 если контекст истек
-			log.Error("failed to withdraw", "error", err)
-			ctx.JSON(500, models.HandlerResponse{
-				Status:  http.StatusInternalServerError,
-				Error:   err.Error(),
-				Message: "failed to withdraw",
-			})
-			return
+			switch err {
+			case storages.ErrInsufficientFunds:
+				log.Warn("failed to withdraw", "error", err)
+				ctx.JSON(402, models.HandlerResponse{
+					Status:  http.StatusPaymentRequired,
+					Error:   err.Error(),
+					Message: "insufficient funds",
+				})
+				return
+			case storages.ErrCurrencyNotFound:
+				log.Warn("failed to withdraw", "error", err)
+				ctx.JSON(404, models.HandlerResponse{
+					Status:  http.StatusNotFound,
+					Error:   err.Error(),
+					Message: "currency is not supported",
+				})
+				return
+			case storages.ErrAccountNotFound:
+				log.Error("failed to withdraw", "error", err)
+				ctx.JSON(404, models.HandlerResponse{
+					Status:  http.StatusNotFound,
+					Error:   err.Error(),
+					Message: "no account in the specified currency",
+				})
+				return
+			case context.DeadlineExceeded:
+				log.Error("failed to withdraw", "error", err)
+				ctx.JSON(504, models.HandlerResponse{
+					Status:  http.StatusGatewayTimeout,
+					Error:   err.Error(),
+					Message: "the waiting time for a response from the internal service has expired",
+				})
+				return
+			default:
+				log.Error("failed to withdraw", "error", err)
+				ctx.JSON(500, models.HandlerResponse{
+					Status:  http.StatusInternalServerError,
+					Error:   err.Error(),
+					Message: "failed to withdraw",
+				})
+				return
+			}
 		}
 
 		log.Info("withdraw successful")

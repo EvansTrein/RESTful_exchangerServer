@@ -14,8 +14,11 @@ var (
 	ErrInvalidLoginData   = errors.New("invalid email or password")
 
 	// errors StoreWallet
-	ErrCurrencyNotFound = errors.New("currency not found")
-	ErrAccountNotFound  = errors.New("account not found")
+	ErrCurrencyNotFound     = errors.New("currency not found")
+	ErrAccountNotFound      = errors.New("account not found")
+	ErrUnspecifiedOperation = errors.New("unspecified operation")
+	ErrInsufficientFunds    = errors.New("insufficient account balance")
+	ErrInvalidOperationType = errors.New("invalid operation type")
 )
 
 type StoreAuth interface {
@@ -25,6 +28,5 @@ type StoreAuth interface {
 
 type StoreWallet interface {
 	AllAccountsBalance(ctx context.Context, userId uint) (map[string]float32, error)
-	Deposit(ctx context.Context, req models.DepositRequest) (map[string]float32, error)
-	Withdraw(ctx context.Context, req models.WithdrawRequest) (map[string]float32, error)
+	AccountOperation(ctx context.Context, req *models.AccountOperationRequest) (map[string]float32, error)
 }

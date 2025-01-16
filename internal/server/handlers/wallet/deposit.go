@@ -11,7 +11,7 @@ import (
 )
 
 type depositServ interface {
-	Deposit(ctx context.Context, req models.DepositRequest) (*models.DepositResponse, error)
+	Deposit(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error)
 }
 
 func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
@@ -24,7 +24,7 @@ func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 		)
 		log.Debug("account top-up request received")
 
-		var req models.DepositRequest
+		var req models.AccountOperationRequest
 		if err := ctx.ShouldBindJSON(&req); err != nil {
 			log.Warn("fail BindJSON", "error", err)
 			ctx.JSON(400, models.HandlerResponse{Status: http.StatusBadRequest, Error: err.Error(), Message: "invalid data"})
@@ -56,7 +56,7 @@ func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 		req.UserID = userIdUint
 		log.Debug("user id was successfully obtained from the context and added to the request")
 
-		result, err := serv.Deposit(ctx.Request.Context(), req)
+		result, err := serv.Deposit(ctx.Request.Context(), &req)
 		if err != nil {
 			switch err {
 			case storages.ErrCurrencyNotFound:

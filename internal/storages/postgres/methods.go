@@ -6,8 +6,8 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
-	"time"
 
+	services "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 )
@@ -58,7 +58,6 @@ func (db *PostgresDB) SearchUser(ctx context.Context, req models.LoginRequest) (
 		FROM users
 		WHERE email = $1;`
 
-	time.Sleep(time.Second * 7)
 	stmt, err := db.db.PrepareContext(ctx, query)
 	if err != nil {
 		log.Error("failed to prepare SQL query", "error", err)
@@ -124,19 +123,25 @@ func (db *PostgresDB) AllAccountsBalance(ctx context.Context, userId uint) (map[
 	return accounts, nil
 }
 
-func (db *PostgresDB) Deposit(ctx context.Context, req models.DepositRequest) (map[string]float32, error) {
-	op := "Database: account top-up"
+func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountOperationRequest) (map[string]float32, error) {
+	op := "Database: account change"
 	log := db.log.With(slog.String("operation", op))
-	log.Debug("Deposit func call", slog.Any("requets data", req))
+	log.Debug("AccountOperation func call", slog.Any("requets data", req))
+
+	if req.Operation == "" {
+		log.Error("no database operation specified", "error", storages.ErrUnspecifiedOperation)
+		return nil, storages.ErrUnspecifiedOperation
+	}
+
+	log.Debug("еxecuting an account transaction", "account operation", req.Operation)
 
 	currencyCheckQuery := `SELECT EXISTS(SELECT 1 FROM currencies WHERE code = $1)`
 
-	lockAccountsQuery := `
-        SELECT EXISTS(
-            SELECT 1 FROM accounts
-            WHERE user_id = $1 AND currency_code = $2
-            FOR UPDATE
-        )`
+	getBalanceAndLockQuery := `
+        SELECT balance
+        FROM accounts
+        WHERE user_id = $1 AND currency_code = $2
+        FOR UPDATE`
 
 	updateQuery := `
         UPDATE accounts
@@ -155,12 +160,12 @@ func (db *PostgresDB) Deposit(ctx context.Context, req models.DepositRequest) (m
 	}
 	defer currencyCheckStmt.Close()
 
-	lockAccountsStmt, err := db.db.PrepareContext(ctx, lockAccountsQuery)
+	getBalanceAndLockStmt, err := db.db.PrepareContext(ctx, getBalanceAndLockQuery)
 	if err != nil {
 		log.Error("failed to prepare lock accounts SQL query", "error", err)
 		return nil, err
 	}
-	defer lockAccountsStmt.Close()
+	defer getBalanceAndLockStmt.Close()
 
 	updateStmt, err := db.db.PrepareContext(ctx, updateQuery)
 	if err != nil {
@@ -176,6 +181,9 @@ func (db *PostgresDB) Deposit(ctx context.Context, req models.DepositRequest) (m
 	}
 	defer selectNewBalanceStmt.Close()
 
+	log.Debug("all SQL queries for the transaction have been prepared successfully")
+
+	// Start transaction
 	tx, err := db.db.BeginTx(ctx, nil)
 	if err != nil {
 		log.Error("failed to begin transaction", "error", err)
@@ -185,39 +193,57 @@ func (db *PostgresDB) Deposit(ctx context.Context, req models.DepositRequest) (m
 	var currencyExists bool
 	if err = tx.StmtContext(ctx, currencyCheckStmt).QueryRow(req.Currency).Scan(&currencyExists); err != nil {
 		tx.Rollback()
-		log.Error("failed to check currency", "error", err)
+		log.Error("failed to check currency", "error", err, "transaction", "rollback")
 		return nil, err
 	}
 
 	if !currencyExists {
 		tx.Rollback()
-		log.Warn("currency not found", "currency", req.Currency)
+		log.Warn("currency not found", "currency", req.Currency, "transaction", "rollback")
 		return nil, storages.ErrCurrencyNotFound
 	}
 
-	var accountExists bool
-	if err = tx.StmtContext(ctx, lockAccountsStmt).QueryRow(req.UserID, req.Currency).Scan(&accountExists); err != nil {
+	var currentBalance float32
+	if err = tx.StmtContext(ctx, getBalanceAndLockStmt).QueryRow(req.UserID, req.Currency).Scan(&currentBalance); err != nil {
 		tx.Rollback()
-		log.Error("failed to lock accounts", "error", err)
-		return nil, storages.ErrAccountNotFound
-	}
-
-	if !accountExists {
-		tx.Rollback()
-		log.Error("account not found", "user_id", req.UserID, "currency", req.Currency)
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Error("account not found", "user id", req.UserID, "currency", req.Currency, "transaction", "rollback")
+			return nil, storages.ErrAccountNotFound
+		}
+		log.Error("failed to get current balance", "error", err)
 		return nil, err
 	}
 
-	if _, err = tx.StmtContext(ctx, updateStmt).Exec(req.Amount, req.UserID, req.Currency); err != nil {
+	if req.Operation == services.OperationWithdraw && currentBalance < req.Amount {
 		tx.Rollback()
-		log.Error("failed to update account balance", "error", err)
+		log.Warn("insufficient funds", "current balance", currentBalance, "requested amount", req.Amount, "transaction", "rollback")
+		return nil, storages.ErrInsufficientFunds
+	}
+
+	var amount float32
+	switch req.Operation {
+	case services.OperationDeposit:
+		amount = req.Amount
+	case services.OperationWithdraw:
+		amount = -req.Amount
+	default:
+		tx.Rollback()
+		log.Error("invalid operation type", "operation type", req.Operation)
+		return nil, storages.ErrInvalidOperationType
+	}
+
+	log.Debug("all business logic checks have been completed successfully")
+
+	if _, err = tx.StmtContext(ctx, updateStmt).Exec(amount, req.UserID, req.Currency); err != nil {
+		tx.Rollback()
+		log.Error("failed to update account balance", "error", err, "transaction", "rollback")
 		return nil, err
 	}
 
 	rows, err := tx.StmtContext(ctx, selectNewBalanceStmt).Query(req.UserID)
 	if err != nil {
 		tx.Rollback()
-		log.Error("failed to query account balances", "error", err)
+		log.Error("failed to query account balances", "error", err, "transaction", "rollback")
 		return nil, err
 	}
 	defer rows.Close()
@@ -228,7 +254,7 @@ func (db *PostgresDB) Deposit(ctx context.Context, req models.DepositRequest) (m
 		var balance float32
 		if err := rows.Scan(&currencyCode, &balance); err != nil {
 			tx.Rollback()
-			log.Error("failed to scan row", "error", err)
+			log.Error("failed to scan row", "error", err, "transaction", "rollback")
 			return nil, err
 		}
 		accounts[currencyCode] = balance
@@ -236,28 +262,21 @@ func (db *PostgresDB) Deposit(ctx context.Context, req models.DepositRequest) (m
 
 	if err := rows.Err(); err != nil {
 		tx.Rollback()
-		log.Error("error occurred during row iteration", "error", err)
+		log.Error("error occurred during row iteration", "error", err, "transaction", "rollback")
 		return nil, err
 	}
 
 	if len(accounts) == 0 {
 		tx.Rollback()
-		log.Error("no rows were returned by the query")
+		log.Error("no rows were returned by the query", "transaction", "rollback")
 		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.Error("failed to commit transaction", "error", err)
+		log.Error("!!!ATTENTION!!! failed to commit transaction", "error", err)
 		return nil, err
 	}
 
+	log.Info("transaction successfully completed")
 	return accounts, nil
-}
-
-func (db *PostgresDB) Withdraw(ctx context.Context, req models.WithdrawRequest) (map[string]float32, error) {
-	op := "Database: account withdraw"
-	log := db.log.With(slog.String("operation", op))
-	log.Debug("Withdraw func call", slog.Any("requets data", req))
-
-	return nil, nil 
 }

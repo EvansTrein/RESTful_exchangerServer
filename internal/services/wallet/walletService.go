@@ -10,6 +10,11 @@ import (
 	grpcclient "github.com/EvansTrein/RESTful_exchangerServer/pkg/gRPCclient"
 )
 
+const (
+	OperationDeposit = "deposit"
+	OperationWithdraw = "withdraw"
+)
+
 type Wallet struct {
 	log        *slog.Logger
 	clientGRPC grpcclient.ClientGRPC
@@ -67,42 +72,49 @@ func (w *Wallet) Balance(ctx context.Context, req models.BalanceRequest) (*model
 	return &resp, nil
 }
 
-func (w *Wallet) Deposit(ctx context.Context, req models.DepositRequest) (*models.DepositResponse, error) {
+func (w *Wallet) Deposit(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error) {
 	op := "service Wallet: account replenishment"
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Deposit func call", slog.Any("requets data", req))
 
-	newBalance, err := w.db.Deposit(ctx, req)
+	req.Operation = OperationDeposit
+
+	newBalance, err := w.db.AccountOperation(ctx, req)
 	if err != nil {
 		log.Error("failed to deposit in the database", "error", err)
 		return nil, err
 	}
 
-	log.Debug("account was successfully funded", "new balance", newBalance)
+	log.Debug("account operation successful", "new balance", newBalance)
 
-	var resp models.DepositResponse
-	resp.Message = "account topped up successfully"
+	var resp models.AccountOperationResponse
+	resp.Message = "successfully deposit"
 	resp.NewBalance = newBalance
 
-	log.Info("account topped up successfully")
+	log.Info("successfully deposit")
 	return &resp, nil
 }
 
-func (w *Wallet) Withdraw(ctx context.Context, req models.WithdrawRequest) (*models.WithdrawResponse, error) {
+func (w *Wallet) Withdraw(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error) {
 	op := "service Wallet: withdraw request received"
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Withdraw func call", slog.Any("requets data", req))
 
-	newBalance, err := w.db.Withdraw(ctx, req)
+	req.Operation = OperationWithdraw
+
+	newBalance, err := w.db.AccountOperation(ctx, req)
 	if err != nil {
 		log.Error("failed to withdraw in the database", "error", err)
 		return nil, err
 	}
 
-	var resp models.WithdrawResponse
+	log.Debug("account operation successful", "new balance", newBalance)
+
+	var resp models.AccountOperationResponse
 	resp.Message = "successfully withdrawn"
 	resp.NewBalance = newBalance
 
+	log.Info("successfully withdrawn")
 	return &resp, nil
 }
 
