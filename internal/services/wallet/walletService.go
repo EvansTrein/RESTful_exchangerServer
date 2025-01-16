@@ -196,7 +196,7 @@ func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*mod
 	balanceUser[req.ToCurrency] = exchangeResult.NewToBalance
 	
 	var resp models.ExchangeResponse
-	resp.Message = "data successfully received"
+	resp.Message = "currency exchange successfully"
 	resp.ExchangeRate = rate.Rate
 	resp.SpentAccoutn = models.SpentAccoutn{Currency: req.FromCurrency, Amount: req.Amount}
 	resp.ReceivedAccount = models.ReceivedAccount{Currency: req.ToCurrency, Amount: exchangeResult.Received}
