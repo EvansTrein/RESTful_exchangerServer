@@ -74,7 +74,7 @@ func (w *Wallet) Deposit(ctx context.Context, req models.DepositRequest) (*model
 
 	newBalance, err := w.db.Deposit(ctx, req)
 	if err != nil {
-		log.Error("failed to replenish the account in the database", "error", err)
+		log.Error("failed to deposit in the database", "error", err)
 		return nil, err
 	}
 
@@ -89,8 +89,21 @@ func (w *Wallet) Deposit(ctx context.Context, req models.DepositRequest) (*model
 }
 
 func (w *Wallet) Withdraw(ctx context.Context, req models.WithdrawRequest) (*models.WithdrawResponse, error) {
+	op := "service Wallet: withdraw request received"
+	log := w.log.With(slog.String("operation", op))
+	log.Debug("Withdraw func call", slog.Any("requets data", req))
 
-	return &models.WithdrawResponse{}, nil
+	newBalance, err := w.db.Withdraw(ctx, req)
+	if err != nil {
+		log.Error("failed to withdraw in the database", "error", err)
+		return nil, err
+	}
+
+	var resp models.WithdrawResponse
+	resp.Message = "successfully withdrawn"
+	resp.NewBalance = newBalance
+
+	return &resp, nil
 }
 
 func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*models.ExchangeResponse, error) {

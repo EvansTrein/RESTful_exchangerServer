@@ -56,7 +56,6 @@ func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
 		log.Debug("user id was successfully obtained from the context and added to the request")
 
 		result, err := serv.Withdraw(ctx.Request.Context(), req)
-
 		if err != nil {
 			// TODO: вернуть 402 если на балансе недостаточно средств
 			// TODO: вернуть 404 если запрошенной валюты нет

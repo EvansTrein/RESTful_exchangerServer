@@ -26,4 +26,5 @@ type StoreAuth interface {
 type StoreWallet interface {
 	AllAccountsBalance(ctx context.Context, userId uint) (map[string]float32, error)
 	Deposit(ctx context.Context, req models.DepositRequest) (map[string]float32, error)
+	Withdraw(ctx context.Context, req models.WithdrawRequest) (map[string]float32, error)
 }

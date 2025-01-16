@@ -125,9 +125,9 @@ func (db *PostgresDB) AllAccountsBalance(ctx context.Context, userId uint) (map[
 }
 
 func (db *PostgresDB) Deposit(ctx context.Context, req models.DepositRequest) (map[string]float32, error) {
-	op := "Database: account top-up "
+	op := "Database: account top-up"
 	log := db.log.With(slog.String("operation", op))
-	log.Debug("ReplenishAccount func call", slog.Any("requets data", req))
+	log.Debug("Deposit func call", slog.Any("requets data", req))
 
 	currencyCheckQuery := `SELECT EXISTS(SELECT 1 FROM currencies WHERE code = $1)`
 
@@ -252,4 +252,12 @@ func (db *PostgresDB) Deposit(ctx context.Context, req models.DepositRequest) (m
 	}
 
 	return accounts, nil
+}
+
+func (db *PostgresDB) Withdraw(ctx context.Context, req models.WithdrawRequest) (map[string]float32, error) {
+	op := "Database: account withdraw"
+	log := db.log.With(slog.String("operation", op))
+	log.Debug("Withdraw func call", slog.Any("requets data", req))
+
+	return nil, nil 
 }
