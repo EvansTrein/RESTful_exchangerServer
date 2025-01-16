@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
+	services "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
@@ -59,7 +59,7 @@ func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 		result, err := serv.Deposit(ctx.Request.Context(), &req)
 		if err != nil {
 			switch err {
-			case storages.ErrCurrencyNotFound:
+			case services.ErrCurrencyNotFound:
 				log.Warn("failed to deposit", "error", err)
 				ctx.JSON(404, models.HandlerResponse{
 					Status:  http.StatusNotFound,
@@ -67,7 +67,7 @@ func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 					Message: "currency not found",
 				})
 				return
-			case storages.ErrAccountNotFound:
+			case services.ErrAccountNotFound:
 				log.Error("failed to deposit", "error", err)
 				ctx.JSON(404, models.HandlerResponse{
 					Status:  http.StatusNotFound,

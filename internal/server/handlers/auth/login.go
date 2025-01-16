@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
+	services "github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +37,15 @@ func Login(log *slog.Logger, serv loginServ) gin.HandlerFunc {
 		result, err := serv.Login(ctx.Request.Context(), req)
 		if err != nil {
 			switch err {
-			case storages.ErrUserNotFound:
+			case services.ErrInvalidLoginData:
+				log.Warn("failed to authorize", "error", err)
+				ctx.JSON(400, models.HandlerResponse{
+					Status:  http.StatusBadRequest,
+					Error:   err.Error(),
+					Message: "invalid email or password",
+				})
+				return
+			case services.ErrUserNotFound:
 				log.Warn("failed to authorize", "error", err)
 				ctx.JSON(404, models.HandlerResponse{
 					Status:  http.StatusNotFound,

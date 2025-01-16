@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
@@ -11,8 +12,16 @@ import (
 )
 
 const (
-	OperationDeposit = "deposit"
+	OperationDeposit  = "deposit"
 	OperationWithdraw = "withdraw"
+)
+
+var (
+	ErrCurrencyNotFound     = errors.New("currency not found")
+	ErrAccountNotFound      = errors.New("account not found")
+	ErrUnspecifiedOperation = errors.New("unspecified operation")
+	ErrInsufficientFunds    = errors.New("insufficient account balance")
+	ErrInvalidOperationType = errors.New("invalid operation type")
 )
 
 type Wallet struct {
@@ -73,7 +82,7 @@ func (w *Wallet) Balance(ctx context.Context, req models.BalanceRequest) (*model
 }
 
 func (w *Wallet) Deposit(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error) {
-	op := "service Wallet: account replenishment"
+	op := "service Wallet: deposit request received"
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Deposit func call", slog.Any("requets data", req))
 

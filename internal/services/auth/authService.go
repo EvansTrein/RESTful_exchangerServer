@@ -2,11 +2,18 @@ package services
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/EvansTrein/RESTful_exchangerServer/pkg/utils"
+)
+
+var (
+	ErrUserNotFound       = errors.New("user not found")
+	ErrEmailAlreadyExists = errors.New("email already exists")
+	ErrInvalidLoginData   = errors.New("invalid email or password")
 )
 
 type Auth struct {
@@ -64,7 +71,7 @@ func (a *Auth) Login(ctx context.Context, req models.LoginRequest) (*models.Logi
 
 	if validPass := utils.CheckHashing(req.Password, user.HashPassword); !validPass {
 		log.Error("incorrect password")
-		return nil, storages.ErrInvalidLoginData
+		return nil, ErrInvalidLoginData
 	}
 
 	log.Debug("password has been successfully verified")

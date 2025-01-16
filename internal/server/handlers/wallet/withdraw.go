@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
+	services "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
@@ -59,7 +59,7 @@ func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
 		result, err := serv.Withdraw(ctx.Request.Context(), &req)
 		if err != nil {
 			switch err {
-			case storages.ErrInsufficientFunds:
+			case services.ErrInsufficientFunds:
 				log.Warn("failed to withdraw", "error", err)
 				ctx.JSON(402, models.HandlerResponse{
 					Status:  http.StatusPaymentRequired,
@@ -67,7 +67,7 @@ func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
 					Message: "insufficient funds",
 				})
 				return
-			case storages.ErrCurrencyNotFound:
+			case services.ErrCurrencyNotFound:
 				log.Warn("failed to withdraw", "error", err)
 				ctx.JSON(404, models.HandlerResponse{
 					Status:  http.StatusNotFound,
@@ -75,7 +75,7 @@ func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
 					Message: "currency is not supported",
 				})
 				return
-			case storages.ErrAccountNotFound:
+			case services.ErrAccountNotFound:
 				log.Error("failed to withdraw", "error", err)
 				ctx.JSON(404, models.HandlerResponse{
 					Status:  http.StatusNotFound,

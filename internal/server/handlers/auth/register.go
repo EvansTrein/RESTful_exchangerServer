@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
+	services "github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +37,7 @@ func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 		result, err := serv.Register(ctx.Request.Context(), req)
 		if err != nil {
 			switch err {
-			case storages.ErrEmailAlreadyExists:
+			case services.ErrEmailAlreadyExists:
 				log.Warn("failed to create user", "error", err)
 				ctx.JSON(400, models.HandlerResponse{
 					Status:  http.StatusBadRequest,

@@ -58,9 +58,9 @@ type ExchangeRatesResponse struct {
 
 type ExchangeRequest struct {
 	UserID       uint    `json:"id"`
-	FromCurrency string  `json:"from_currency" binding:"required"`
-	ToCurrency   string  `json:"to_currency" binding:"required"`
-	Amount       float32 `json:"amount" binding:"required"`
+	FromCurrency string  `json:"from_currency" binding:"required,min=3,max=6"`
+	ToCurrency   string  `json:"to_currency" binding:"required,min=3,max=6"`
+	Amount       float32 `json:"amount" binding:"required,gt=0"`
 }
 
 type ExchangeGRPC struct {

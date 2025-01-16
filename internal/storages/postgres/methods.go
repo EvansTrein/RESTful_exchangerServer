@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"strings"
 
-	services "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
+	servAuth "github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
+	servWallet "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 )
 
@@ -39,7 +39,7 @@ func (db *PostgresDB) CreateUser(ctx context.Context, req models.RegisterRequest
 	err = stmt.QueryRowContext(ctx, req.Name, req.Email, req.HashPassword).Scan(&id)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value") {
-			return 0, storages.ErrEmailAlreadyExists
+			return 0, servAuth.ErrEmailAlreadyExists
 		}
 		log.Error("fail to execute SQL query", "error", err)
 		return 0, err
@@ -70,7 +70,7 @@ func (db *PostgresDB) SearchUser(ctx context.Context, req models.LoginRequest) (
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Warn("user with this email is not in the database", "email", req.Email)
-			return nil, storages.ErrUserNotFound
+			return nil, servAuth.ErrUserNotFound
 		}
 		log.Error("fail to execute SQL query", "error", err)
 		return nil, err
@@ -129,8 +129,8 @@ func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountO
 	log.Debug("AccountOperation func call", slog.Any("requets data", req))
 
 	if req.Operation == "" {
-		log.Error("no database operation specified", "error", storages.ErrUnspecifiedOperation)
-		return nil, storages.ErrUnspecifiedOperation
+		log.Error("no database operation specified", "error", servWallet.ErrUnspecifiedOperation)
+		return nil, servWallet.ErrUnspecifiedOperation
 	}
 
 	log.Debug("еxecuting an account transaction", "account operation", req.Operation)
@@ -200,7 +200,7 @@ func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountO
 	if !currencyExists {
 		tx.Rollback()
 		log.Warn("currency not found", "currency", req.Currency, "transaction", "rollback")
-		return nil, storages.ErrCurrencyNotFound
+		return nil, servWallet.ErrCurrencyNotFound
 	}
 
 	var currentBalance float32
@@ -208,28 +208,28 @@ func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountO
 		tx.Rollback()
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Error("account not found", "user id", req.UserID, "currency", req.Currency, "transaction", "rollback")
-			return nil, storages.ErrAccountNotFound
+			return nil, servWallet.ErrAccountNotFound
 		}
 		log.Error("failed to get current balance", "error", err)
 		return nil, err
 	}
 
-	if req.Operation == services.OperationWithdraw && currentBalance < req.Amount {
+	if req.Operation == servWallet.OperationWithdraw && currentBalance < req.Amount {
 		tx.Rollback()
 		log.Warn("insufficient funds", "current balance", currentBalance, "requested amount", req.Amount, "transaction", "rollback")
-		return nil, storages.ErrInsufficientFunds
+		return nil, servWallet.ErrInsufficientFunds
 	}
 
 	var amount float32
 	switch req.Operation {
-	case services.OperationDeposit:
+	case servWallet.OperationDeposit:
 		amount = req.Amount
-	case services.OperationWithdraw:
+	case servWallet.OperationWithdraw:
 		amount = -req.Amount
 	default:
 		tx.Rollback()
 		log.Error("invalid operation type", "operation type", req.Operation)
-		return nil, storages.ErrInvalidOperationType
+		return nil, servWallet.ErrInvalidOperationType
 	}
 
 	log.Debug("all business logic checks have been completed successfully")
