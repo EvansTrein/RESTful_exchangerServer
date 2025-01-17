@@ -220,3 +220,10 @@ func (w *Wallet) ExchangeRates(ctx context.Context) (*models.ExchangeRatesRespon
 	log.Info("all exchange rates have been successfully received")
 	return &resp, nil
 }
+
+// func (w *Wallet) getExchangeRate(ctx context.Context, g *errgroup.Group) error {
+// 	g.Go(func() error {
+        
+//     })
+// 	return nil
+// }
