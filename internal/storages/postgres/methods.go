@@ -282,6 +282,69 @@ func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountO
 }
 
 func (db *PostgresDB) SaveExchangeRateChanges(ctx context.Context, newData *models.CurrencyExchangeResult) error {
+	op := "Database: updating of accounts on exchange"
+	log := db.log.With(slog.String("operation", op))
+	log.Debug("SaveExchangeRateChanges func call", slog.Any("new data", newData))
 
+	lockQuery := `
+        SELECT balance
+        FROM accounts
+        WHERE user_id = $1 AND currency_code IN ($2, $3)
+        FOR UPDATE;`
+
+	updateQuery := `
+        UPDATE accounts
+        SET balance = CASE
+            WHEN currency_code = $2 THEN $3
+            WHEN currency_code = $4 THEN $5
+            ELSE balance
+        END
+        WHERE user_id = $1 AND currency_code IN ($2, $4);`
+
+	lockStmt, err := db.db.PrepareContext(ctx, lockQuery)
+	if err != nil {
+		log.Error("failed to prepare lockQuery SQL", "error", err)
+		return err
+	}
+	defer lockStmt.Close()
+
+	updateStmt, err := db.db.PrepareContext(ctx, updateQuery)
+	if err != nil {
+		log.Error("failed to prepare updateQuery SQL", "error", err)
+		return err
+	}
+	defer updateStmt.Close()
+
+	// Start transaction
+	tx, err := db.db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Error("failed to begin transaction", "error", err)
+		return err
+	}
+
+	if _, err := tx.StmtContext(ctx, lockStmt).Exec(newData.UserID, newData.BaseCurrency, newData.ToCurrency); err != nil {
+		tx.Rollback()
+		log.Error("failed to lock accounts", "error", err, "transaction", "rollback")
+		return err
+	}
+
+	if _, err := tx.StmtContext(ctx, updateStmt).Exec(
+		newData.UserID,
+		newData.BaseCurrency,
+		newData.NewBaseBalance,
+		newData.ToCurrency,
+		newData.NewToBalance,
+	); err != nil {
+		tx.Rollback()
+		log.Error("failed to update balances", "error", err, "transaction", "rollback")
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+        log.Error("!!!ATTENTION!!! failed to commit transaction", "error", err)
+        return err
+    }
+
+	log.Info("transaction successfully completed")
 	return nil
 }

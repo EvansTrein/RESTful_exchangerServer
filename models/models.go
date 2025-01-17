@@ -92,7 +92,9 @@ type CurrencyExchangeData struct {
 
 type CurrencyExchangeResult struct {
 	UserID         uint
+	BaseCurrency   string
 	NewBaseBalance float32
+	ToCurrency     string
 	NewToBalance   float32
 	Received       float32
 }

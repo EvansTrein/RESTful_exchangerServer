@@ -32,6 +32,16 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 			return
 		}
 
+		if req.FromCurrency == req.ToCurrency {
+			log.Warn("same currencies")
+			ctx.JSON(400, models.HandlerResponse{
+				Status: http.StatusBadRequest,
+				Error: "same currency is specified for buying and selling",
+				Message: "invalid data",
+			})
+			return
+		}
+
 		log.Debug("request data has been successfully validated", "data", req)
 
 		userID, exists := ctx.Get("userID")

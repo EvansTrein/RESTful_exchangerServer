@@ -29,6 +29,10 @@ func (w *Wallet) CurrencyExchangeLogic(data *models.CurrencyExchangeData) (*mode
 	newBaseBalance = float32(math.Round(float64(newBaseBalance)*100) / 100)
 	newToBalance = float32(math.Round(float64(newToBalance)*100) / 100)
 
+	if newBaseBalance < 0 || newToBalance < 0 {
+		return nil, ErrNegativeBalance
+	}
+
 	var result models.CurrencyExchangeResult
 	result.NewBaseBalance = newBaseBalance
 	result.NewToBalance = newToBalance
