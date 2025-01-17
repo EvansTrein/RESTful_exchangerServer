@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/EvansTrein/RESTful_exchangerServer/internal/config"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	grpcclient "github.com/EvansTrein/RESTful_exchangerServer/pkg/gRPCclient"
@@ -29,34 +28,27 @@ type Wallet struct {
 	log        *slog.Logger
 	clientGRPC grpcclient.ClientGRPC
 	db         storages.StoreWallet
+	cacheDB    storages.CacheDB
 }
 
-func New(log *slog.Logger, db storages.StoreWallet, conf *config.Services) *Wallet {
+func New(log *slog.Logger, gRPC grpcclient.ClientGRPC, db storages.StoreWallet, cacheDB storages.CacheDB) *Wallet {
 	log.Debug("service Wallet: started creating")
-
-	client, err := grpcclient.New(log, conf.AddressGRPC, conf.PortGRPC)
-	if err != nil {
-		panic(err)
-	}
 
 	log.Info("service Wallet: successfully created")
 	return &Wallet{
 		log:        log,
-		clientGRPC: client,
+		clientGRPC: gRPC,
 		db:         db,
+		cacheDB:    cacheDB,
 	}
 }
 
 func (w *Wallet) Stop() error {
 	w.log.Debug("service Wallet: stop started")
 
-	if err := w.clientGRPC.Close(); err != nil {
-		w.log.Error("failed to stop the Wallet service", "error", err)
-		return err
-	}
-
 	w.clientGRPC = nil
 	w.db = nil
+	w.cacheDB = nil
 
 	w.log.Info("service Wallet: stop successful")
 	return nil

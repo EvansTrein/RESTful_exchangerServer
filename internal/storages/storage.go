@@ -16,3 +16,7 @@ type StoreWallet interface {
 	AccountOperation(ctx context.Context, req *models.AccountOperationRequest) (map[string]float32, error)
 	SaveExchangeRateChanges(ctx context.Context, newData *models.CurrencyExchangeResult) error
 }
+
+type CacheDB interface {
+
+}

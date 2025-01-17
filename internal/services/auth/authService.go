@@ -33,6 +33,15 @@ func New(log *slog.Logger, db storages.StoreAuth, secretKey string) *Auth {
 	}
 }
 
+func (a *Auth) Stop() error {
+	a.log.Debug("service Auth: stop started")
+
+	a.db = nil
+
+	a.log.Info("service Auth: stop successful")
+	return nil
+}
+
 func (a *Auth) Register(ctx context.Context, req models.RegisterRequest) (*models.RegisterResponse, error) {
 	op := "service Auth: user registration"
 	log := a.log.With(slog.String("operation", op))

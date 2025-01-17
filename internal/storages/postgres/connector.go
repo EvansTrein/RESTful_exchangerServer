@@ -27,7 +27,6 @@ func New(storagePath string, log *slog.Logger) (*PostgresDB, error) {
 	}
 
 	log.Info("database: connect to Postgres successfully")
-
 	return &PostgresDB{db: db, log: log}, nil
 }
 
@@ -47,6 +46,5 @@ func (s *PostgresDB) Close() error {
 	s.db = nil
 
 	s.log.Info("database: stop successful")
-
 	return nil
 }

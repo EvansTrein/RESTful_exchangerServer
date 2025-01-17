@@ -1,0 +1,53 @@
+services:
+  db_wallet:
+      container_name: db_wallet
+      environment:
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      image: postgres:15-alpine
+      ports:
+        - ${POSTGRES_PORT}:${POSTGRES_PORT}
+      command:
+        - 'postgres'
+        - '-c'
+        - 'port=${POSTGRES_PORT}'
+      volumes:
+        - db_wallet_vol:/var/lib/postgresql/data
+      networks:
+        - server_net
+
+  redis:
+    container_name: redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_MAXMEMORY: ${REDIS_MAXMEMORY}
+      REDIS_HOST: ${REDIS_HOST}
+    image: redis:7.4.2-alpine
+    command: 
+      - '--port'
+      - '${REDIS_PORT}'
+      - '--requirepass'
+      - '${REDIS_PASSWORD}'
+      - '--maxmemory'
+      - '${REDIS_MAXMEMORY}'
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    volumes:
+      - redis_data:/data
+    networks:
+      - server_net
+
+
+volumes: 
+  db_wallet_vol: {}
+  redis_data: {}
+
+networks:
+  server_net:
+    driver: bridge
+
+
+# docker compose --env-file config.env up --build -d
+
+
+

@@ -23,7 +23,6 @@ var (
 type ClientGRPC interface {
 	GetAllRates(ctx context.Context, req *models.ExchangeRatesResponse) error
 	ExchangeRate(ctx context.Context, req *models.ExchangeGRPC) error
-	Close() error
 }
 
 type ServerGRPC struct {

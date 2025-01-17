@@ -15,6 +15,7 @@ type Config struct {
 	SecretKey   string `env:"SECRET_KEY" env-required:"true"`
 	HTTPServer  `env-prefix:"HTTP_"`
 	Services    `env-prefix:"SERVICES_"`
+	Redis       `env-prefix:"REDIS_"`
 }
 
 type HTTPServer struct {
@@ -29,6 +30,13 @@ type HTTPServer struct {
 type Services struct {
 	AddressGRPC string `env:"ADDRESS_GRPC_SERVER"`
 	PortGRPC    string `env:"PORT_GRPC_SERVER"`
+}
+
+type Redis struct {
+	Address  string        `env:"HOST"`
+	Port     string        `env:"PORT"`
+	Password string        `env:"PASSWORD"`
+	TTLKeys  time.Duration `env:"TTL_KEYS"`
 }
 
 func MustLoad() *Config {

@@ -8,15 +8,19 @@ import (
 	servAuth "github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
 	servWallet "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
 	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages/postgres"
+	"github.com/EvansTrein/RESTful_exchangerServer/internal/storages/redis"
+	grpcclient "github.com/EvansTrein/RESTful_exchangerServer/pkg/gRPCclient"
 )
 
 type App struct {
-	server *server.HttpServer
-	log    *slog.Logger
-	conf   *config.Config
-	auth   *servAuth.Auth
-	wallet *servWallet.Wallet
-	db     *postgres.PostgresDB
+	server   *server.HttpServer
+	log      *slog.Logger
+	conf     *config.Config
+	auth     *servAuth.Auth
+	wallet   *servWallet.Wallet
+	db       *postgres.PostgresDB
+	cacheDB  *redis.RedisDB
+	servGRPC *grpcclient.ServerGRPC
 }
 
 func New(conf *config.Config, log *slog.Logger) *App {
@@ -29,18 +33,30 @@ func New(conf *config.Config, log *slog.Logger) *App {
 		panic(err)
 	}
 
+	redis, err := redis.New(log, conf.Redis.Address, conf.Redis.Port, conf.Redis.Password, conf.Redis.TTLKeys)
+	if err != nil {
+		panic(err)
+	}
+
+	clientGRPC, err := grpcclient.New(log, conf.Services.AddressGRPC, conf.Services.PortGRPC)
+	if err != nil {
+		panic(err)
+	}
+
 	auth := servAuth.New(log, db, conf.SecretKey)
-	wallet := servWallet.New(log, db, &conf.Services)
+	wallet := servWallet.New(log, clientGRPC, db, redis)
 
 	httpServer.InitRouters(&conf.HTTPServer, auth, wallet)
 
 	app := &App{
-		server: httpServer,
-		log:    log,
-		conf:   conf,
-		auth:   auth,
-		wallet: wallet,
-		db:     db,
+		server:   httpServer,
+		log:      log,
+		conf:     conf,
+		auth:     auth,
+		wallet:   wallet,
+		db:       db,
+		cacheDB:  redis,
+		servGRPC: clientGRPC,
 	}
 
 	log.Info("application: successfully created")
@@ -64,8 +80,13 @@ func (a *App) Stop() error {
 		return err
 	}
 
-	if err := a.wallet.Stop(); err != nil {
-		a.log.Error("failed to stop the Wallet service")
+	if err := a.servGRPC.Close(); err != nil {
+		a.log.Error("failed to stop gRPC server")
+		return err
+	}
+
+	if err := a.cacheDB.Close(); err != nil {
+		a.log.Error("failed to stop Redis")
 		return err
 	}
 
@@ -74,8 +95,22 @@ func (a *App) Stop() error {
 		return err
 	}
 
+	if err := a.auth.Stop(); err != nil {
+		a.log.Error("failed to stop the Auth service")
+		return err
+	}
+
+	if err := a.wallet.Stop(); err != nil {
+		a.log.Error("failed to stop the Wallet service")
+		return err
+	}
+
 	a.auth = nil
 	a.wallet = nil
+	a.db = nil
+	a.cacheDB = nil
+	a.servGRPC = nil
+	a.server = nil
 
 	a.log.Info("application: stop successful")
 	return nil
