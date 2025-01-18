@@ -63,7 +63,7 @@ type ExchangeRequest struct {
 	Amount       float32 `json:"amount" binding:"required,gt=0"`
 }
 
-type ExchangeGRPC struct {
+type ExchangeRate struct {
 	FromCurrency string  `json:"from_currency" binding:"required"`
 	ToCurrency   string  `json:"to_currency" binding:"required"`
 	Rate         float32 `json:"rate" binding:"required"`

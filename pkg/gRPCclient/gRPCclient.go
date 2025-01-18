@@ -22,7 +22,7 @@ var (
 
 type ClientGRPC interface {
 	GetAllRates(ctx context.Context, req *models.ExchangeRatesResponse) error
-	ExchangeRate(ctx context.Context, req *models.ExchangeGRPC) error
+	ExchangeRate(ctx context.Context, req *models.ExchangeRate) error
 }
 
 type ServerGRPC struct {
@@ -86,7 +86,7 @@ func (s *ServerGRPC) GetAllRates(ctx context.Context, req *models.ExchangeRatesR
 	return nil
 }
 
-func (s *ServerGRPC) ExchangeRate(ctx context.Context, req *models.ExchangeGRPC) error {
+func (s *ServerGRPC) ExchangeRate(ctx context.Context, req *models.ExchangeRate) error {
 	op := "gRPC server: currency exchange rate request"
 	log := s.log.With(slog.String("operation", op))
 	log.Debug("ExchangeRate func call")

@@ -22,6 +22,7 @@ var (
 	ErrInsufficientFunds    = errors.New("insufficient account balance")
 	ErrInvalidOperationType = errors.New("invalid operation type")
 	ErrNegativeBalance      = errors.New("negative balance")
+	ErrRateInCacheNotFound  = errors.New("exchange rate is not in the cache")
 )
 
 type Wallet struct {
@@ -125,7 +126,13 @@ func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*mod
 	log := w.log.With(slog.String("operation", op))
 	log.Debug("Exchange func call", slog.Any("requets data", req))
 
-	// TODO: запустить в горутине работу с курсом валют, получением его из Redis или БД и сохранением в Redis
+	var rate models.ExchangeRate
+	rate.FromCurrency = req.FromCurrency
+	rate.ToCurrency = req.ToCurrency
+
+	// goroutine run
+	errChan := make(chan error, 1)
+	w.getExchangeRateAsync(ctx, &rate, errChan)
 
 	balanceUser, err := w.db.AllAccountsBalance(ctx, req.UserID)
 	if err != nil {
@@ -152,19 +159,19 @@ func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*mod
 
 	log.Debug("business logic check successfully completed")
 
-	// TODO: проверить есть ли курс в Redis
-
-	var rate models.ExchangeGRPC
-	rate.FromCurrency = req.FromCurrency
-	rate.ToCurrency = req.ToCurrency
-
-	if err := w.clientGRPC.ExchangeRate(ctx, &rate); err != nil {
-		log.Error("failed to get data from GRPC server", "error", err)
-		return nil, err
+	// waiting for gorutina
+	select {
+	case err := <-errChan:
+		if err != nil {
+			log.Error("failed to get the exchange rate", "error", err)
+			return nil, err
+		}
+	case <-ctx.Done():
+		log.Error("context canceled or timeout while waiting for exchange rate", "error", ctx.Err())
+		return nil, ctx.Err()
 	}
 
-	log.Debug("exchange rate successfully received from gRPC server", "rate from gRPC", rate)
-	// TODO: тут получен курс, сохранить его в Redis
+	log.Debug("exchange rate successfully received", "rate", rate)
 
 	// collect data to calculate new account balances
 	exchangeData := models.CurrencyExchangeData{
@@ -178,7 +185,7 @@ func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*mod
 		log.Error("currency exchange failed", "error", err)
 		return nil, err
 	}
-	// TODO: обмен произведен, сохранить изменения в БД
+
 	exchangeResult.UserID = req.UserID
 	exchangeResult.BaseCurrency = req.FromCurrency
 	exchangeResult.ToCurrency = req.ToCurrency
@@ -221,9 +228,41 @@ func (w *Wallet) ExchangeRates(ctx context.Context) (*models.ExchangeRatesRespon
 	return &resp, nil
 }
 
-// func (w *Wallet) getExchangeRate(ctx context.Context, g *errgroup.Group) error {
-// 	g.Go(func() error {
-        
-//     })
-// 	return nil
-// }
+func (w *Wallet) getExchangeRateAsync(ctx context.Context, rate *models.ExchangeRate, errChan chan<- error) {
+	go func() {
+		defer close(errChan)
+		op := "service Wallet: GOROUTINE to get the rate"
+		log := w.log.With(slog.String("operation", op))
+		log.Debug("getExchangeRateAsync func call")
+
+		value, err := w.cacheDB.GetExchange(rate.FromCurrency, rate.ToCurrency)
+		if err != nil && err != ErrRateInCacheNotFound {
+			log.Error("failed to retrieve exchange rate from cache", "error", err)
+			errChan <- err
+			return
+		} else if value != 0 {
+			log.Info("GOROUTINE COMPLETED ==> the exchange rate was obtained from the cache")
+			rate.Rate = value
+			errChan <- nil
+			return
+		}
+
+		log.Debug("exchange rate was not in the cache, request GRPC server")
+
+		if err := w.clientGRPC.ExchangeRate(ctx, rate); err != nil {
+			log.Error("failed to get data from GRPC server", "error", err)
+			errChan <- err
+			return
+		}
+
+		log.Debug("exchange rate was received from the GRPC server, the rate was sent onward, saving of the rate to the cache was started")
+		errChan <- nil
+
+		if err := w.cacheDB.SetExchange(rate.FromCurrency, rate.ToCurrency, rate.Rate); err != nil {
+			log.Error("failed to keep the exchange rate in the cache", "error", err)
+			return
+		}
+
+		log.Info("GOROUTINE IS COMPLETED ==> the exchange rate has been saved in the cache")
+	}()
+}

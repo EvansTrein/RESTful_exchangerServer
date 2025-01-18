@@ -18,6 +18,6 @@ type StoreWallet interface {
 }
 
 type CacheDB interface {
-	TestMethodSet(key, value string) error
-	TestMethodGet(key string) (string, error)
+	SetExchange(fromCurrency, toCurrency string, value float32) error
+	GetExchange(fromCurrency, toCurrency string) (float32, error)
 }
