@@ -100,3 +100,17 @@ func (a *Auth) Login(ctx context.Context, req models.LoginRequest) (*models.Logi
 	log.Info("authorization successful")
 	return &tokenForUser, nil
 }
+
+func (a *Auth) DeleteUser(ctx context.Context, userId uint) error {
+	op := "service Auth: delete user"
+	log := a.log.With(slog.String("operation", op))
+	log.Debug("DeleteUser func call", slog.Any("user id", userId))
+
+	if err := a.db.DeleteUser(ctx, userId); err != nil {
+		log.Error("failed to delete the user from the database", "error", err)
+		return err
+	}
+
+	log.Info("user successfully deleted")
+	return nil
+}

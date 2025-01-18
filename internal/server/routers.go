@@ -22,6 +22,7 @@ func (s *HttpServer) InitRouters(conf *config.HTTPServer, auth *servAuth.Auth, w
 	authRouters.Use(handler.TimeoutMiddleware(s.log, conf))
 	authRouters.POST("/register", handlerAuth.Register(s.log, auth))
 	authRouters.POST("/login", handlerAuth.Login(s.log, auth))
+	authRouters.DELETE("/delete", handler.LoggingMiddleware(s.log, auth), handlerAuth.Delete(s.log, auth))
 
 	walletRouters.Use(handler.TimeoutMiddleware(s.log, conf))
 	walletRouters.Use(handler.LoggingMiddleware(s.log, auth))

@@ -80,8 +80,70 @@ func (db *PostgresDB) SearchUser(ctx context.Context, req models.LoginRequest) (
 	return &user, nil
 }
 
+func (db *PostgresDB) DeleteUser(ctx context.Context, userId uint) error {
+	op := "Database: user removal"
+	log := db.log.With(slog.String("operation", op))
+	log.Debug("DeleteUser func call", slog.Any("user id", userId))
+
+	querylock := `
+		SELECT u.name, a.id
+		FROM users u
+		INNER JOIN accounts a ON u.id = a.user_id
+		WHERE u.id = $1
+		FOR UPDATE;`
+
+	queryDelete := `DELETE FROM users WHERE id = $1;`
+
+	lockStmt, err := db.db.PrepareContext(ctx, querylock)
+	if err != nil {
+		log.Error("failed to prepare lock SQL query", "error", err)
+		return err
+	}
+	defer lockStmt.Close()
+
+	deleteStmt, err := db.db.PrepareContext(ctx, queryDelete)
+	if err != nil {
+		log.Error("failed to prepare delete SQL query", "error", err)
+		return err
+	}
+	defer deleteStmt.Close()
+
+	tx, err := db.db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Error("failed to begin transaction", "error", err)
+		return err
+	}
+
+    var userName string
+    var accountID sql.NullInt64
+    err = tx.StmtContext(ctx, lockStmt).QueryRowContext(ctx, userId).Scan(&userName, &accountID)
+    if err != nil {
+		tx.Rollback()
+        if errors.Is(err, sql.ErrNoRows) {
+            log.Error("user not found", "user id", userId, "transaction", "rollback")
+            return servAuth.ErrUserNotFound
+        }
+        log.Error("failed to execute user lock query", "error", err, "transaction", "rollback")
+        return err
+    }
+
+	if _, err = tx.StmtContext(ctx, deleteStmt).ExecContext(ctx, userId); err != nil {
+		tx.Rollback()
+		log.Error("failed to execute user delete query", "error", err, "transaction", "rollback")
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Error("!!!ATTENTION!!! failed to commit transaction", "error", err)
+		return err
+	}
+
+	log.Info("transaction successfully completed")
+	return nil
+}
+
 func (db *PostgresDB) AllAccountsBalance(ctx context.Context, userId uint) (map[string]float32, error) {
-	op := "Database: balancing all accounts "
+	op := "Database: balancing all accounts"
 	log := db.log.With(slog.String("operation", op))
 	log.Debug("AllAccountsBalance func call", slog.Any("requets data", userId))
 
@@ -112,6 +174,11 @@ func (db *PostgresDB) AllAccountsBalance(ctx context.Context, userId uint) (map[
 			return nil, err
 		}
 		accounts[currencyCode] = balance
+	}
+
+	if len(accounts) == 0 {
+		log.Error("the balance of a non-existent user was requested", "user id", userId)
+		return nil, servAuth.ErrUserNotFound
 	}
 
 	if err := rows.Err(); err != nil {
@@ -191,7 +258,7 @@ func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountO
 	}
 
 	var currencyExists bool
-	if err = tx.StmtContext(ctx, currencyCheckStmt).QueryRow(req.Currency).Scan(&currencyExists); err != nil {
+	if err = tx.StmtContext(ctx, currencyCheckStmt).QueryRowContext(ctx, req.Currency).Scan(&currencyExists); err != nil {
 		tx.Rollback()
 		log.Error("failed to check currency", "error", err, "transaction", "rollback")
 		return nil, err
@@ -204,7 +271,7 @@ func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountO
 	}
 
 	var currentBalance float32
-	if err = tx.StmtContext(ctx, getBalanceAndLockStmt).QueryRow(req.UserID, req.Currency).Scan(&currentBalance); err != nil {
+	if err = tx.StmtContext(ctx, getBalanceAndLockStmt).QueryRowContext(ctx, req.UserID, req.Currency).Scan(&currentBalance); err != nil {
 		tx.Rollback()
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Error("account not found", "user id", req.UserID, "currency", req.Currency, "transaction", "rollback")
@@ -234,13 +301,13 @@ func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountO
 
 	log.Debug("all business logic checks have been completed successfully")
 
-	if _, err = tx.StmtContext(ctx, updateStmt).Exec(amount, req.UserID, req.Currency); err != nil {
+	if _, err = tx.StmtContext(ctx, updateStmt).ExecContext(ctx, amount, req.UserID, req.Currency); err != nil {
 		tx.Rollback()
 		log.Error("failed to update account balance", "error", err, "transaction", "rollback")
 		return nil, err
 	}
 
-	rows, err := tx.StmtContext(ctx, selectNewBalanceStmt).Query(req.UserID)
+	rows, err := tx.StmtContext(ctx, selectNewBalanceStmt).QueryContext(ctx, req.UserID)
 	if err != nil {
 		tx.Rollback()
 		log.Error("failed to query account balances", "error", err, "transaction", "rollback")
@@ -322,13 +389,14 @@ func (db *PostgresDB) SaveExchangeRateChanges(ctx context.Context, newData *mode
 		return err
 	}
 
-	if _, err := tx.StmtContext(ctx, lockStmt).Exec(newData.UserID, newData.BaseCurrency, newData.ToCurrency); err != nil {
+	if _, err := tx.StmtContext(ctx, lockStmt).ExecContext(ctx, newData.UserID, newData.BaseCurrency, newData.ToCurrency); err != nil {
 		tx.Rollback()
 		log.Error("failed to lock accounts", "error", err, "transaction", "rollback")
 		return err
 	}
 
-	if _, err := tx.StmtContext(ctx, updateStmt).Exec(
+	if _, err := tx.StmtContext(ctx, updateStmt).ExecContext(
+		ctx,
 		newData.UserID,
 		newData.BaseCurrency,
 		newData.NewBaseBalance,
@@ -341,9 +409,9 @@ func (db *PostgresDB) SaveExchangeRateChanges(ctx context.Context, newData *mode
 	}
 
 	if err := tx.Commit(); err != nil {
-        log.Error("!!!ATTENTION!!! failed to commit transaction", "error", err)
-        return err
-    }
+		log.Error("!!!ATTENTION!!! failed to commit transaction", "error", err)
+		return err
+	}
 
 	log.Info("transaction successfully completed")
 	return nil

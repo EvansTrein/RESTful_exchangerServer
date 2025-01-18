@@ -36,6 +36,7 @@ func (r *RedisDB) GetExchange(fromCurrency, toCurrency string) (float32, error) 
 	value, err := r.client.Get(key).Result()
 	if err != nil {
 		if err == redis.Nil {
+			log.Warn("exchange rates are not in the cache")
 			return 0, services.ErrRateInCacheNotFound
 		}
 		r.log.Error("failed to get key from Redis", "key", key, "error", err)

@@ -4,7 +4,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	services "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
+	servWallet "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
+	servAuth "github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	grpcclient "github.com/EvansTrein/RESTful_exchangerServer/pkg/gRPCclient"
 	"github.com/gin-gonic/gin"
@@ -70,7 +71,7 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 		result, err := serv.Exchange(ctx.Request.Context(), req)
 		if err != nil {
 			switch err {
-			case services.ErrInsufficientFunds:
+			case servWallet.ErrInsufficientFunds:
 				log.Warn("failed to exchanged", "error", err)
 				ctx.JSON(402, models.HandlerResponse{
 					Status:  http.StatusPaymentRequired,
@@ -78,7 +79,15 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 					Message: "insufficient funds",
 				})
 				return
-			case services.ErrAccountNotFound:
+			case servAuth.ErrUserNotFound:
+				log.Error("request was received for a non-existent user", "error", err, "user id", userIdUint)
+				ctx.JSON(404, models.HandlerResponse{
+					Status:  http.StatusNotFound,
+					Error:   err.Error(),
+					Message: "user does not exist",
+				})
+				return
+			case servWallet.ErrAccountNotFound:
 				log.Warn("failed to exchanged", "error", err)
 				ctx.JSON(404, models.HandlerResponse{
 					Status:  http.StatusNotFound,
@@ -86,7 +95,7 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 					Message: "no account in this currency",
 				})
 				return
-			case services.ErrCurrencyNotFound:
+			case servWallet.ErrCurrencyNotFound:
 				log.Warn("failed to exchanged", "error", err)
 				ctx.JSON(404, models.HandlerResponse{
 					Status:  http.StatusNotFound,

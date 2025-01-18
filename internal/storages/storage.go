@@ -9,6 +9,7 @@ import (
 type StoreAuth interface {
 	CreateUser(ctx context.Context, req models.RegisterRequest) (uint, error)
 	SearchUser(ctx context.Context, req models.LoginRequest) (*models.User, error)
+	DeleteUser(ctx context.Context, userId uint) error
 }
 
 type StoreWallet interface {

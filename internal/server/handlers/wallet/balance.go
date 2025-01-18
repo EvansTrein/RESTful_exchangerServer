@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	services "github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/net/context"
@@ -50,6 +51,14 @@ func Balance(log *slog.Logger, serv balanceServ) gin.HandlerFunc {
 		result, err := serv.Balance(ctx.Request.Context(), req)
 		if err != nil {
 			switch err {
+			case services.ErrUserNotFound:
+				log.Error("user not found", "error", err)
+				ctx.JSON(404, models.HandlerResponse{
+					Status: http.StatusNotFound, 
+					Error: err.Error(), 
+					Message: "the balance of a non-existent user was requested",
+				})
+				return
 			case context.DeadlineExceeded:
 				log.Error("failed to send data", "error", err)
 				ctx.JSON(504, models.HandlerResponse{
