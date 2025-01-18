@@ -77,7 +77,7 @@ func TestWallet_CurrencyExchangeLogic(t *testing.T) {
             wantErr: false,
         },
 		{
-            name: "InValid negative amount",
+            name: "Invalid negative amount",
             w:    testWallet,
             args: args{
                 data: &models.CurrencyExchangeData{
@@ -91,7 +91,7 @@ func TestWallet_CurrencyExchangeLogic(t *testing.T) {
             wantErr: true,
         },
 		{
-            name: "InValid negative exchange rate",
+            name: "Invalid negative exchange rate",
             w:    testWallet,
             args: args{
                 data: &models.CurrencyExchangeData{
@@ -105,7 +105,7 @@ func TestWallet_CurrencyExchangeLogic(t *testing.T) {
             wantErr: true,
         },
 		{
-            name: "InValid insufficient base balance",
+            name: "Invalid insufficient base balance",
             w:    testWallet,
             args: args{
                 data: &models.CurrencyExchangeData{
@@ -119,7 +119,7 @@ func TestWallet_CurrencyExchangeLogic(t *testing.T) {
             wantErr: true,
         },
 		{
-            name: "InValid zero exchange rate",
+            name: "Invalid zero exchange rate",
             w:    testWallet,
             args: args{
                 data: &models.CurrencyExchangeData{
@@ -133,7 +133,7 @@ func TestWallet_CurrencyExchangeLogic(t *testing.T) {
             wantErr: true,
         },
 		{
-            name: "InValid zero amount",
+            name: "Invalid zero amount",
             w:    testWallet,
             args: args{
                 data: &models.CurrencyExchangeData{
