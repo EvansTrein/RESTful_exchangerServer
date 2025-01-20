@@ -11,6 +11,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
+	github.com/stretchr/testify v1.9.0
 	golang.org/x/crypto v0.27.0
 	golang.org/x/net v0.29.0
 	google.golang.org/grpc v1.65.0
@@ -53,7 +54,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/smartystreets/goconvey v1.8.1 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
