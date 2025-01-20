@@ -7,17 +7,20 @@ import (
 	"github.com/gavv/httpexpect"
 )
 
-const host = "http://localhost:8000"
+const (
+	host       = "http://localhost:8000"
+	apiVersion = "/api/v1"
+)
 
 var (
-	testDataName     = "testName"
+	testDataName     = "authTest"
 	testDataPassword = "123456"
-	testDataEmail    = "test@mail.com"
+	testDataEmail    = "authTest@mail.com"
 	token            = ""
 )
 
 func TestRegisterHandler(t *testing.T) {
-	urlPath := "/api/v1/register"
+	urlPath := "/register"
 
 	testHTTP := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
@@ -26,7 +29,7 @@ func TestRegisterHandler(t *testing.T) {
 	})
 
 	t.Run("Invalid email", func(t *testing.T) {
-		testCase := testHTTP.POST(urlPath).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPath).WithJSON(map[string]string{
 			"username": "name",
 			"password": "123456",
 			"email":    "namemail.com",
@@ -40,7 +43,7 @@ func TestRegisterHandler(t *testing.T) {
 	})
 
 	t.Run("Invalid password", func(t *testing.T) {
-		testCase := testHTTP.POST(urlPath).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPath).WithJSON(map[string]string{
 			"username": "name",
 			"password": "1234", // min 6 symbols
 			"email":    "name@mail.com",
@@ -54,7 +57,7 @@ func TestRegisterHandler(t *testing.T) {
 	})
 
 	t.Run("Invalid JSON body request (no name)", func(t *testing.T) {
-		testCase := testHTTP.POST(urlPath).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPath).WithJSON(map[string]string{
 			"password": "123456",
 			"email":    "name@mail.com",
 		}).
@@ -67,7 +70,7 @@ func TestRegisterHandler(t *testing.T) {
 	})
 
 	t.Run("successful registration", func(t *testing.T) {
-		testCase := testHTTP.POST(urlPath).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPath).WithJSON(map[string]string{
 			"username": testDataName,
 			"password": testDataPassword,
 			"email":    testDataEmail,
@@ -81,7 +84,7 @@ func TestRegisterHandler(t *testing.T) {
 	})
 
 	t.Run("Invalid email already exists", func(t *testing.T) {
-		testCase := testHTTP.POST(urlPath).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPath).WithJSON(map[string]string{
 			"username": testDataName,
 			"password": testDataPassword,
 			"email":    testDataEmail,
@@ -96,7 +99,7 @@ func TestRegisterHandler(t *testing.T) {
 }
 
 func TestLoginHandler(t *testing.T) {
-	urlPath := "/api/v1/login"
+	urlPath := "/login"
 	testHTTP := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
 		Reporter: httpexpect.NewRequireReporter(t),
@@ -105,7 +108,7 @@ func TestLoginHandler(t *testing.T) {
 
 	t.Run("Invalid email not found", func(t *testing.T) {
 
-		testCase := testHTTP.POST(urlPath).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPath).WithJSON(map[string]string{
 			"email":    "failEmail@mail.com",
 			"password": testDataPassword,
 		}).
@@ -118,9 +121,9 @@ func TestLoginHandler(t *testing.T) {
 	})
 
 	t.Run("Invalid password", func(t *testing.T) {
-		urlPath := "/api/v1/login"
+		urlPath := "/login"
 
-		testCase := testHTTP.POST(urlPath).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPath).WithJSON(map[string]string{
 			"email":    testDataEmail,
 			"password": "invalidPass",
 		}).
@@ -133,7 +136,7 @@ func TestLoginHandler(t *testing.T) {
 	})
 
 	t.Run("Invalid JSON body request (no email)", func(t *testing.T) {
-		testCase := testHTTP.POST(urlPath).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPath).WithJSON(map[string]string{
 			"password": testDataPassword,
 		}).
 			Expect().
@@ -145,7 +148,7 @@ func TestLoginHandler(t *testing.T) {
 	})
 
 	t.Run("successful login", func(t *testing.T) {
-		testCase := testHTTP.POST(urlPath).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPath).WithJSON(map[string]string{
 			"email":    testDataEmail,
 			"password": testDataPassword,
 		}).
@@ -159,7 +162,7 @@ func TestLoginHandler(t *testing.T) {
 }
 
 func TestDeleteHandlerAndLoggingMiddleware(t *testing.T) {
-	urlPath := "/api/v1/delete"
+	urlPath := "/delete"
 	testHTTP := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
 		Reporter: httpexpect.NewRequireReporter(t),
@@ -167,7 +170,7 @@ func TestDeleteHandlerAndLoggingMiddleware(t *testing.T) {
 	})
 
 	t.Run("Invalid not header Authorization", func(t *testing.T) {
-		testCase := testHTTP.DELETE(urlPath).
+		testCase := testHTTP.DELETE(apiVersion + urlPath).
 			Expect().
 			Status(http.StatusUnauthorized).
 			JSON().Object().NotEmpty()
@@ -177,7 +180,7 @@ func TestDeleteHandlerAndLoggingMiddleware(t *testing.T) {
 	})
 
 	t.Run("Invalid header Authorization", func(t *testing.T) {
-		testCase := testHTTP.DELETE(urlPath).WithHeader("Authori", "Bearer "+token).
+		testCase := testHTTP.DELETE(apiVersion + urlPath).WithHeader("Authori", "Bearer "+token).
 			Expect().
 			Status(http.StatusUnauthorized).
 			JSON().Object().NotEmpty()
@@ -187,7 +190,7 @@ func TestDeleteHandlerAndLoggingMiddleware(t *testing.T) {
 	})
 
 	t.Run("Invalid not token", func(t *testing.T) {
-		testCase := testHTTP.DELETE(urlPath).WithHeader("Authorization", "Bearer "+"").
+		testCase := testHTTP.DELETE(apiVersion + urlPath).WithHeader("Authorization", "Bearer "+"").
 			Expect().
 			Status(http.StatusUnauthorized).
 			JSON().Object().NotEmpty()
@@ -197,7 +200,7 @@ func TestDeleteHandlerAndLoggingMiddleware(t *testing.T) {
 	})
 
 	t.Run("Invalid token format", func(t *testing.T) {
-		testCase := testHTTP.DELETE(urlPath).WithHeader("Authorization", "Bearer "+"jher34234koq").
+		testCase := testHTTP.DELETE(apiVersion + urlPath).WithHeader("Authorization", "Bearer "+"jher34234koq").
 			Expect().
 			Status(http.StatusInternalServerError).
 			JSON().Object().NotEmpty()
@@ -207,7 +210,7 @@ func TestDeleteHandlerAndLoggingMiddleware(t *testing.T) {
 	})
 
 	t.Run("Invalid Authorization header format", func(t *testing.T) {
-		testCase := testHTTP.DELETE(urlPath).WithHeader("Authorization", "Lalala"+token).
+		testCase := testHTTP.DELETE(apiVersion + urlPath).WithHeader("Authorization", "Lalala"+token).
 			Expect().
 			Status(http.StatusUnauthorized).
 			JSON().Object().NotEmpty()
@@ -217,7 +220,7 @@ func TestDeleteHandlerAndLoggingMiddleware(t *testing.T) {
 	})
 
 	t.Run("successful delete", func(t *testing.T) {
-		testCase := testHTTP.DELETE(urlPath).WithHeader("Authorization", "Bearer "+token).
+		testCase := testHTTP.DELETE(apiVersion + urlPath).WithHeader("Authorization", "Bearer "+token).
 			Expect().
 			Status(http.StatusOK).
 			JSON().Object().NotEmpty()
@@ -226,7 +229,7 @@ func TestDeleteHandlerAndLoggingMiddleware(t *testing.T) {
 	})
 
 	t.Run("Invalid repeated removal", func(t *testing.T) {
-		testCase := testHTTP.DELETE(urlPath).WithHeader("Authorization", "Bearer "+token).
+		testCase := testHTTP.DELETE(apiVersion + urlPath).WithHeader("Authorization", "Bearer "+token).
 			Expect().
 			Status(http.StatusNotFound).
 			JSON().Object().NotEmpty()

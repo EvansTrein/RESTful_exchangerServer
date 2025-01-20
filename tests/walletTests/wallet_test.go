@@ -10,7 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const host = "http://localhost:8000"
+const (
+	host       = "http://localhost:8000"
+	apiVersion = "/api/v1"
+)
 
 var (
 	testDataName     = "walletTest"
@@ -20,8 +23,8 @@ var (
 )
 
 func TestRegisterAndLogin(t *testing.T) {
-	urlPathReg := "/api/v1/register"
-	urlPathLog := "/api/v1/login"
+	urlPathReg := "/register"
+	urlPathLog := "/login"
 
 	testHTTP := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
@@ -30,7 +33,7 @@ func TestRegisterAndLogin(t *testing.T) {
 	})
 
 	t.Run("successful registration for tests", func(t *testing.T) {
-		testCase := testHTTP.POST(urlPathReg).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPathReg).WithJSON(map[string]string{
 			"username": testDataName,
 			"password": testDataPassword,
 			"email":    testDataEmail,
@@ -44,7 +47,7 @@ func TestRegisterAndLogin(t *testing.T) {
 	})
 
 	t.Run("successful login for tests", func(t *testing.T) {
-		testCase := testHTTP.POST(urlPathLog).WithJSON(map[string]string{
+		testCase := testHTTP.POST(apiVersion + urlPathLog).WithJSON(map[string]string{
 			"email":    testDataEmail,
 			"password": testDataPassword,
 		}).
@@ -58,7 +61,7 @@ func TestRegisterAndLogin(t *testing.T) {
 }
 
 func TestBalance(t *testing.T) {
-	urlPathBalance := "/api/v1/balance"
+	urlPathBalance := "/balance"
 
 	testHTTP := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
@@ -66,8 +69,21 @@ func TestBalance(t *testing.T) {
 		Client:   http.DefaultClient,
 	})
 
+	t.Run("balance fail not header Authorization", func(t *testing.T) {
+		testCase := testHTTP.GET(apiVersion + urlPathBalance).WithJSON(map[string]interface{}{
+			"amount":   1200,
+			"currency": "EUR",
+		}).
+			Expect().
+			Status(http.StatusUnauthorized).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("error").Value("error").String().NotEmpty()
+		testCase.ContainsKey("message").ValueEqual("message", "unauthorized user")
+	})
+
 	t.Run("successful balance zero", func(t *testing.T) {
-		testCase := testHTTP.GET(urlPathBalance).WithHeader("Authorization", "Bearer "+token).
+		testCase := testHTTP.GET(apiVersion + urlPathBalance).WithHeader("Authorization", "Bearer "+token).
 			Expect().
 			Status(http.StatusOK).
 			JSON().Object().NotEmpty()
@@ -89,11 +105,10 @@ func TestBalance(t *testing.T) {
 			assert.EqualValues(t, 0.0, v, "Field value is not zero, which is not expected")
 		}
 	})
-
 }
 
 func TestDeposit(t *testing.T) {
-	urlPathDeposit := "/api/v1/wallet/deposit"
+	urlPathDeposit := "/wallet/deposit"
 
 	testHTTP := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
@@ -101,11 +116,24 @@ func TestDeposit(t *testing.T) {
 		Client:   http.DefaultClient,
 	})
 
+	t.Run("deposit fail not header Authorization", func(t *testing.T) {
+		testCase := testHTTP.POST(apiVersion + urlPathDeposit).WithJSON(map[string]interface{}{
+			"amount":   1200,
+			"currency": "EUR",
+		}).
+			Expect().
+			Status(http.StatusUnauthorized).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("error").Value("error").String().NotEmpty()
+		testCase.ContainsKey("message").ValueEqual("message", "unauthorized user")
+	})
+
 	t.Run("deposit fail currency not found", func(t *testing.T) {
 		amount := 10000
 		currency := "XXXX"
 
-		testCase := testHTTP.POST(urlPathDeposit).WithHeader("Authorization", "Bearer "+token).
+		testCase := testHTTP.POST(apiVersion + urlPathDeposit).WithHeader("Authorization", "Bearer "+token).
 			WithJSON(map[string]interface{}{
 				"amount":   amount,
 				"currency": currency,
@@ -124,7 +152,7 @@ func TestDeposit(t *testing.T) {
 		amount := 1000
 		currency := "GBP"
 
-		testCase := testHTTP.POST(urlPathDeposit).WithHeader("Authorization", "Bearer "+token).
+		testCase := testHTTP.POST(apiVersion + urlPathDeposit).WithHeader("Authorization", "Bearer "+token).
 			WithJSON(map[string]interface{}{
 				"amount":   amount,
 				"currency": currency,
@@ -138,14 +166,14 @@ func TestDeposit(t *testing.T) {
 	})
 
 	t.Run("deposit successful", func(t *testing.T) {
-		amount := 1000
+		amount := 2000
 		currency := "USD"
 
-		testCase := testHTTP.POST(urlPathDeposit).WithHeader("Authorization", "Bearer "+token).
-		WithJSON(map[string]interface{}{
-			"amount":   amount,
-			"currency": currency,
-		}).
+		testCase := testHTTP.POST(apiVersion + urlPathDeposit).WithHeader("Authorization", "Bearer "+token).
+			WithJSON(map[string]interface{}{
+				"amount":   amount,
+				"currency": currency,
+			}).
 			Expect().
 			Status(http.StatusOK).
 			JSON().Object().NotEmpty()
@@ -169,35 +197,287 @@ func TestDeposit(t *testing.T) {
 			t.Errorf("recharged account - %s is not in the response", currency)
 		}
 
-		assert.EqualValues(t, 1000, v, "The value of the field is not equal, which is not expected")
+		assert.EqualValues(t, amount, v, "The value of the field is not equal, which is not expected")
+	})
+}
+
+func TestWithdraw(t *testing.T) {
+	urlPathWithdraw := "/wallet/withdraw"
+
+	testHTTP := httpexpect.WithConfig(httpexpect.Config{
+		BaseURL:  host,
+		Reporter: httpexpect.NewRequireReporter(t),
+		Client:   http.DefaultClient,
+	})
+
+	t.Run("withdraw fail not header Authorization", func(t *testing.T) {
+		testCase := testHTTP.POST(apiVersion + urlPathWithdraw).WithJSON(map[string]interface{}{
+			"amount":   1200,
+			"currency": "EUR",
+		}).
+			Expect().
+			Status(http.StatusUnauthorized).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("error").Value("error").String().NotEmpty()
+		testCase.ContainsKey("message").ValueEqual("message", "unauthorized user")
+	})
+
+	t.Run("withdraw fail insufficient funds", func(t *testing.T) {
+		amount := 2500
+		currency := "USD"
+
+		testCase := testHTTP.POST(apiVersion + urlPathWithdraw).WithHeader("Authorization", "Bearer "+token).
+			WithJSON(map[string]interface{}{
+				"amount":   amount,
+				"currency": currency,
+			}).
+			Expect().
+			Status(http.StatusPaymentRequired).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("error").Value("error").String().NotEmpty()
+		testCase.ContainsKey("message").ValueEqual("message", "insufficient funds")
+	})
+
+	t.Run("withdraw fail currency not found", func(t *testing.T) {
+		amount := 5000
+		currency := "XXXX"
+
+		testCase := testHTTP.POST(apiVersion + urlPathWithdraw).WithHeader("Authorization", "Bearer "+token).
+			WithJSON(map[string]interface{}{
+				"amount":   amount,
+				"currency": currency,
+			}).
+			Expect().
+			Status(http.StatusNotFound).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("error").Value("error").String().NotEmpty()
+		testCase.ContainsKey("message").ValueEqual("message", "currency is not supported")
+	})
+
+	t.Run("withdraw successful", func(t *testing.T) {
+		amount := 1000
+		currency := "USD"
+
+		testCase := testHTTP.POST(apiVersion + urlPathWithdraw).WithHeader("Authorization", "Bearer "+token).
+			WithJSON(map[string]interface{}{
+				"amount":   amount,
+				"currency": currency,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("new_balance")
+		testCase.ContainsKey("message").ValueEqual("message", "successfully withdrawn")
+
+		jsonData, err := json.Marshal(testCase.Raw())
+		if err != nil {
+			t.Errorf("Failed to marshal raw data to JSON: %v", err)
+		}
+
+		var depositResponse models.AccountOperationResponse
+		err = json.Unmarshal(jsonData, &depositResponse)
+		if err != nil {
+			t.Errorf("Failed to decode JSON response: %v", err)
+		}
+
+		v, ok := depositResponse.NewBalance[currency]
+		if !ok {
+			t.Errorf("debit currency account - %s is missing in the response", currency)
+		}
+
+		// 2000 (from the test above) - 1000 = 1000
+		assert.EqualValues(t, amount, v, "The value of the field is not equal, which is not expected")
 	})
 }
 
 func TestBalanceDepositWithdraw(t *testing.T) {
-	t.Skip()
-	// urlPathBalance := "/api/v1/balance"
-	// urlPathDeposit := "/api/v1/wallet/deposit"
-	// urlPathWithdraw := "/api/v1/wallet/withdraw"
+	urlPathBalance := "/balance"
+	urlPathDeposit := "/wallet/deposit"
+	urlPathWithdraw := "/wallet/withdraw"
 
-	// testHTTP := httpexpect.WithConfig(httpexpect.Config{
-	// 	BaseURL:  host,
-	// 	Reporter: httpexpect.NewRequireReporter(t),
-	// 	Client:   http.DefaultClient,
-	// })
+	amount := 3000
+	currency := "EUR"
 
-	// t.Run("", func(t *testing.T) {
-	// 	testCase := testHTTP.GET(urlPathBalance).WithHeader("Authorization", "Bearer "+token).
-	// 		Expect().
-	// 		Status(http.StatusOK).
-	// 		JSON().Object().NotEmpty()
+	testHTTP := httpexpect.WithConfig(httpexpect.Config{
+		BaseURL:  host,
+		Reporter: httpexpect.NewRequireReporter(t),
+		Client:   http.DefaultClient,
+	})
 
-		
-	// })
+	t.Run("deposit EUR", func(t *testing.T) {
+		testCase := testHTTP.POST(apiVersion + urlPathDeposit).WithHeader("Authorization", "Bearer "+token).
+			WithJSON(map[string]interface{}{
+				"amount":   amount,
+				"currency": currency,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Object().NotEmpty()
 
+		testCase.ContainsKey("new_balance")
+		testCase.ContainsKey("message").ValueEqual("message", "successfully deposit")
+
+		jsonData, err := json.Marshal(testCase.Raw())
+		if err != nil {
+			t.Errorf("Failed to marshal raw data to JSON: %v", err)
+		}
+
+		var depositResponse models.AccountOperationResponse
+		err = json.Unmarshal(jsonData, &depositResponse)
+		if err != nil {
+			t.Errorf("Failed to decode JSON response: %v", err)
+		}
+
+		v, ok := depositResponse.NewBalance[currency]
+		if !ok {
+			t.Errorf("recharged account - %s is not in the response", currency)
+		}
+
+		assert.EqualValues(t, amount, v, "The value of the field is not equal, which is not expected")
+	})
+
+	t.Run("check balance and account EUR", func(t *testing.T) {
+		testCase := testHTTP.GET(apiVersion + urlPathBalance).WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("balance")
+
+		jsonData, err := json.Marshal(testCase.Raw())
+		if err != nil {
+			t.Errorf("Failed to marshal raw data to JSON: %v", err)
+		}
+
+		var balanceResponse models.BalanceResponse
+		err = json.Unmarshal(jsonData, &balanceResponse)
+		if err != nil {
+			t.Errorf("Failed to decode JSON response: %v", err)
+		}
+
+		v, ok := balanceResponse.Balance[currency]
+		if !ok {
+			t.Errorf("debit currency account - %s is missing in the response", currency)
+		}
+
+		if v != float32(amount) {
+			t.Errorf("incorrect account %s balance after top-up %v", currency, amount)
+		}
+	})
+
+	t.Run("withdraw EUR", func(t *testing.T) {
+		testCase := testHTTP.POST(apiVersion + urlPathWithdraw).WithHeader("Authorization", "Bearer "+token).
+			WithJSON(map[string]interface{}{
+				"amount":   amount,
+				"currency": currency,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("new_balance")
+		testCase.ContainsKey("message").ValueEqual("message", "successfully withdrawn")
+
+		jsonData, err := json.Marshal(testCase.Raw())
+		if err != nil {
+			t.Errorf("Failed to marshal raw data to JSON: %v", err)
+		}
+
+		var depositResponse models.AccountOperationResponse
+		err = json.Unmarshal(jsonData, &depositResponse)
+		if err != nil {
+			t.Errorf("Failed to decode JSON response: %v", err)
+		}
+
+		v, ok := depositResponse.NewBalance[currency]
+		if !ok {
+			t.Errorf("debit currency account - %s is missing in the response", currency)
+		}
+
+		// 3000 - 3000 = 0
+		assert.EqualValues(t, 0, v, "The value of the field is not equal, which is not expected")
+	})
+
+	t.Run("final check balance", func(t *testing.T) {
+		testCase := testHTTP.GET(apiVersion + urlPathBalance).WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("balance")
+
+		jsonData, err := json.Marshal(testCase.Raw())
+		if err != nil {
+			t.Errorf("Failed to marshal raw data to JSON: %v", err)
+		}
+
+		var balanceResponse models.BalanceResponse
+		err = json.Unmarshal(jsonData, &balanceResponse)
+		if err != nil {
+			t.Errorf("Failed to decode JSON response: %v", err)
+		}
+
+		v, ok := balanceResponse.Balance[currency]
+		if !ok {
+			t.Errorf("debit currency account - %s is missing in the response", currency)
+		}
+
+		if v != 0 {
+			t.Errorf("incorrect account %s balance after withdraw %v", currency, amount)
+		}
+
+		for k, v := range balanceResponse.Balance {
+			if v < 0 {
+				t.Errorf("negative balance %s - %v", k, v)
+			}
+		}
+	})
+}
+
+func TestExchange(t *testing.T) {
+	urlPathExchange := "/exchange"
+
+	testHTTP := httpexpect.WithConfig(httpexpect.Config{
+		BaseURL:  host,
+		Reporter: httpexpect.NewRequireReporter(t),
+		Client:   http.DefaultClient,
+	})
+
+	t.Run("exchange fail not header Authorization", func(t *testing.T) {
+		testCase := testHTTP.POST(apiVersion + urlPathExchange).WithJSON(map[string]interface{}{
+			"from_currency": "RUB",
+			"to_currency":   "EUR",
+			"amount":        5000,
+		}).
+			Expect().
+			Status(http.StatusUnauthorized).
+			JSON().Object().NotEmpty()
+
+		testCase.ContainsKey("error").Value("error").String().NotEmpty()
+		testCase.ContainsKey("message").ValueEqual("message", "unauthorized user")
+	})
+
+	t.Run("Invalid JSON body request (no to_currency)", func(t *testing.T) {
+		testCase := testHTTP.POST(apiVersion + urlPathExchange).WithHeader("Authorization", "Bearer "+token).
+		WithJSON(map[string]interface{}{
+			"from_currency": "RUB",
+			"amount":        5000,
+		}).
+			Expect().
+			Status(http.StatusBadRequest).
+			JSON().Object().NotEmpty()
+
+			testCase.ContainsKey("error").Value("error").String().NotEmpty()
+			testCase.ContainsKey("message").ValueEqual("message", "invalid data")
+	})
 }
 
 func TestDeleteUserAfter(t *testing.T) {
-	urlPathDel := "/api/v1/delete"
+	urlPathDel := "/delete"
 	testHTTP := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
 		Reporter: httpexpect.NewRequireReporter(t),
@@ -205,7 +485,7 @@ func TestDeleteUserAfter(t *testing.T) {
 	})
 
 	t.Run("successful delete for tests", func(t *testing.T) {
-		testCase := testHTTP.DELETE(urlPathDel).WithHeader("Authorization", "Bearer "+token).
+		testCase := testHTTP.DELETE(apiVersion + urlPathDel).WithHeader("Authorization", "Bearer "+token).
 			Expect().
 			Status(http.StatusOK).
 			JSON().Object().NotEmpty()
