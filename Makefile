@@ -12,3 +12,6 @@ run-default:
 
 migrate:
 	go run cmd/migrator/migrateup.go -storage-path $(PATH_DB) -migrations-path $(FILE_MIGRATIONS)
+
+swagger:
+	swag init --dir ./cmd,./internal/server/handlers,./models

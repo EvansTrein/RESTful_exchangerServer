@@ -1,0 +1,87 @@
+basePath: /api/v1
+definitions:
+  models.HandlerResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+  models.RegisterRequest:
+    properties:
+      email:
+        example: john.doe@example.com
+        type: string
+      password:
+        example: "123456"
+        minLength: 6
+        type: string
+      username:
+        example: john
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  models.RegisterResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      message:
+        example: user successfully created
+        type: string
+    type: object
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: localhost:8000
+info:
+  contact:
+    email: evanstrein@icloud.com
+    name: Evans Trein
+    url: https://github.com/EvansTrein
+  title: Exchanger
+  version: "1.0"
+paths:
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Creating a new user with the provided data
+      parameters:
+      - description: User data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "504":
+          description: Gateway Timeout
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+      summary: Creating a new user
+      tags:
+      - auth
+schemes:
+- http
+swagger: "2.0"

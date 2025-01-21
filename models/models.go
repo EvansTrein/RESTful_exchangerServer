@@ -8,14 +8,14 @@ type User struct {
 }
 
 type RegisterRequest struct {
-	Email        string `json:"email" binding:"required,email"`
-	Name         string `json:"username" binding:"required,min=3"`
-	HashPassword string `json:"password" binding:"required,min=6"`
+	Email        string `json:"email" binding:"required,email" example:"john.doe@example.com"`
+	Name         string `json:"username" binding:"required,min=3" example:"john"`
+	HashPassword string `json:"password" binding:"required,min=6" example:"123456"`
 }
 
 type RegisterResponse struct {
-	UserID  uint   `json:"id"`
-	Message string `json:"message"`
+	UserID  uint   `json:"id" example:"1"`
+	Message string `json:"message" example:"user successfully created"`
 }
 
 type LoginRequest struct {

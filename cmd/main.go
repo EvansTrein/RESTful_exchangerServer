@@ -11,6 +11,20 @@ import (
 	"github.com/EvansTrein/RESTful_exchangerServer/pkg/logs"
 )
 
+// @title           Exchanger
+// @version         1.0
+// @description
+
+// @contact.name   Evans Trein
+// @contact.email  evanstrein@icloud.com
+// @contact.url    https://github.com/EvansTrein
+
+// @host      localhost:8000
+// @BasePath  /api/v1
+// @schemes   http
+
+// @externalDocs.description  OpenAPI
+// @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
 	var conf *config.Config
 	var log *slog.Logger

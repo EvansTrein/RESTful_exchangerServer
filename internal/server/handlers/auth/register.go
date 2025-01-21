@@ -14,6 +14,17 @@ type registerServ interface {
 	Register(ctx context.Context, req models.RegisterRequest) (*models.RegisterResponse, error)
 }
 
+// @Summary Creating a new user
+// @Description Creating a new user with the provided data
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body models.RegisterRequest true "User data"
+// @Success 201 {object} models.RegisterResponse
+// @Failure 400 {object} models.HandlerResponse
+// @Failure 500 {object} models.HandlerResponse
+// @Failure 504 {object} models.HandlerResponse
+// @Router /register [post]
 func Register(log *slog.Logger, serv registerServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Register: call"

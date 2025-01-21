@@ -9,6 +9,11 @@ import (
 	handlerWallet "github.com/EvansTrein/RESTful_exchangerServer/internal/server/handlers/wallet"
 	servAuth "github.com/EvansTrein/RESTful_exchangerServer/internal/services/auth"
 	servWallet "github.com/EvansTrein/RESTful_exchangerServer/internal/services/wallet"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "github.com/EvansTrein/RESTful_exchangerServer/docs"
 )
 
 const (
@@ -32,4 +37,6 @@ func (s *HttpServer) InitRouters(conf *config.HTTPServer, auth *servAuth.Auth, w
 
 	walletRouters.GET("/exchange/rates", handlerWallet.ExchangeRates(s.log, wallet))
 	walletRouters.POST("/exchange", handlerWallet.Exchange(s.log, wallet))
+
+	s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
