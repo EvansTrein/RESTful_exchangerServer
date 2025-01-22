@@ -14,6 +14,18 @@ type deleteServ interface {
 	DeleteUser(ctx context.Context, userId uint) error
 }
 
+// @Summary Delete
+// @Description user delete
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.HandlerResponse
+// @Failure 401 {object} models.HandlerResponse
+// @Failure 404 {object} models.HandlerResponse
+// @Failure 504 {object} models.HandlerResponse
+// @Failure 500 {object} models.HandlerResponse
+// @Router /delete [delete]
 func Delete(log *slog.Logger, serv deleteServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Delete: call"

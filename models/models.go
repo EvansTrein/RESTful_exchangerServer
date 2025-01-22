@@ -19,12 +19,12 @@ type RegisterResponse struct {
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Email    string `json:"email" binding:"required,email" example:"john.doe@example.com"`
+	Password string `json:"password" binding:"required" example:"123456"`
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
+	Token string `json:"token" example:"JWT-token"`
 }
 
 type PayloadToken struct {
@@ -40,27 +40,27 @@ type BalanceResponse struct {
 }
 
 type AccountOperationRequest struct {
-	UserID    uint    `json:"id"`
-	Amount    float32 `json:"amount" binding:"required,gt=0"`
-	Currency  string  `json:"currency" binding:"required,min=3,max=6"`
-	Operation string  `json:"operation"`
+	UserID    uint    `json:"-"`
+	Amount    float32 `json:"amount" binding:"required,gt=0" example:"2000"`
+	Currency  string  `json:"currency" binding:"required,min=3,max=6" example:"USD"`
+	Operation string  `json:"-"`
 }
 
 type AccountOperationResponse struct {
-	Message    string             `json:"message"`
+	Message    string             `json:"message" example:"text message"`
 	NewBalance map[string]float32 `json:"new_balance"`
 }
 
 type ExchangeRatesResponse struct {
-	Message string             `json:"message"`
+	Message string             `json:"message" example:"text message"`
 	Rates   map[string]float32 `json:"rates"`
 }
 
 type ExchangeRequest struct {
-	UserID       uint    `json:"id"`
-	FromCurrency string  `json:"from_currency" binding:"required,min=3,max=6"`
-	ToCurrency   string  `json:"to_currency" binding:"required,min=3,max=6"`
-	Amount       float32 `json:"amount" binding:"required,gt=0"`
+	UserID       uint    `json:"-"`
+	FromCurrency string  `json:"from_currency" binding:"required,min=3,max=6" example:"USD"`
+	ToCurrency   string  `json:"to_currency" binding:"required,min=3,max=6" example:"CNY"`
+	Amount       float32 `json:"amount" binding:"required,gt=0" example:"500"`
 }
 
 type ExchangeRate struct {
@@ -70,8 +70,8 @@ type ExchangeRate struct {
 }
 
 type ExchangeResponse struct {
-	Message         string             `json:"message"`
-	ExchangeRate    float32            `json:"exchange_rate"`
+	Message         string             `json:"message" example:"text message"`
+	ExchangeRate    float32            `json:"exchange_rate" example:"7.424683"`
 	SpentAccoutn    SpentAccoutn       `json:"spent_accoutn"`
 	ReceivedAccount ReceivedAccount    `json:"received_account"`
 	NewBalance      map[string]float32 `json:"new_balance"`
@@ -79,8 +79,8 @@ type ExchangeResponse struct {
 
 type HandlerResponse struct {
 	Status  int    `json:"status"`
-	Error   string `json:"error"`
-	Message string `json:"message"`
+	Error   string `json:"error" example:"text error"`
+	Message string `json:"message" example:"text message"`
 }
 
 type CurrencyExchangeData struct {
@@ -100,11 +100,11 @@ type CurrencyExchangeResult struct {
 }
 
 type SpentAccoutn struct {
-	Currency string  `json:"currency"`
-	Amount   float32 `json:"amount"`
+	Currency string  `json:"currency" example:"USD"`
+	Amount   float32 `json:"amount" example:"500"`
 }
 
 type ReceivedAccount struct {
-	Currency string  `json:"currency"`
-	Amount   float32 `json:"amount"`
+	Currency string  `json:"currency" example:"CNY"`
+	Amount   float32 `json:"amount" example:"3636.30"`
 }

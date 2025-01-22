@@ -14,6 +14,21 @@ type withdrawServ interface {
 	Withdraw(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error)
 }
 
+// @Summary Withdraw funds from an account
+// @Description Withdraw funds from a user's account for a specific currency
+// @Tags wallet
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body models.AccountOperationRequest true "Withdraw request"
+// @Success 200 {object} models.AccountOperationResponse
+// @Failure 400 {object} models.HandlerResponse
+// @Failure 401 {object} models.HandlerResponse
+// @Failure 402 {object} models.HandlerResponse
+// @Failure 404 {object} models.HandlerResponse
+// @Failure 500 {object} models.HandlerResponse
+// @Failure 504 {object} models.HandlerResponse
+// @Router /wallet/withdraw [post]
 func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Withdraw: call"

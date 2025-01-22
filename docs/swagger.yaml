@@ -1,13 +1,120 @@
 basePath: /api/v1
 definitions:
+  models.AccountOperationRequest:
+    properties:
+      amount:
+        example: 2000
+        type: number
+      currency:
+        example: USD
+        maxLength: 6
+        minLength: 3
+        type: string
+    required:
+    - amount
+    - currency
+    type: object
+  models.AccountOperationResponse:
+    properties:
+      message:
+        example: text message
+        type: string
+      new_balance:
+        additionalProperties:
+          type: number
+        type: object
+    type: object
+  models.BalanceResponse:
+    properties:
+      balance:
+        additionalProperties:
+          type: number
+        type: object
+    type: object
+  models.ExchangeRatesResponse:
+    properties:
+      message:
+        example: text message
+        type: string
+      rates:
+        additionalProperties:
+          type: number
+        type: object
+    type: object
+  models.ExchangeRequest:
+    properties:
+      amount:
+        example: 500
+        type: number
+      from_currency:
+        example: USD
+        maxLength: 6
+        minLength: 3
+        type: string
+      to_currency:
+        example: CNY
+        maxLength: 6
+        minLength: 3
+        type: string
+    required:
+    - amount
+    - from_currency
+    - to_currency
+    type: object
+  models.ExchangeResponse:
+    properties:
+      exchange_rate:
+        example: 7.424683
+        type: number
+      message:
+        example: text message
+        type: string
+      new_balance:
+        additionalProperties:
+          type: number
+        type: object
+      received_account:
+        $ref: '#/definitions/models.ReceivedAccount'
+      spent_accoutn:
+        $ref: '#/definitions/models.SpentAccoutn'
+    type: object
   models.HandlerResponse:
     properties:
       error:
+        example: text error
         type: string
       message:
+        example: text message
         type: string
       status:
         type: integer
+    type: object
+  models.LoginRequest:
+    properties:
+      email:
+        example: john.doe@example.com
+        type: string
+      password:
+        example: "123456"
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  models.LoginResponse:
+    properties:
+      token:
+        example: JWT-token
+        type: string
+    type: object
+  models.ReceivedAccount:
+    properties:
+      amount:
+        example: 3636.3
+        type: number
+      currency:
+        example: CNY
+        type: string
     type: object
   models.RegisterRequest:
     properties:
@@ -36,6 +143,15 @@ definitions:
         example: user successfully created
         type: string
     type: object
+  models.SpentAccoutn:
+    properties:
+      amount:
+        example: 500
+        type: number
+      currency:
+        example: USD
+        type: string
+    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -45,9 +161,201 @@ info:
     email: evanstrein@icloud.com
     name: Evans Trein
     url: https://github.com/EvansTrein
-  title: Exchanger
+  description: |-
+    REST API that works with - postgres as a database, a third-party gRPC server (for currency currencies)
+    and Redis for caching responses from a third-party gRPC service
+  title: Currency exchanger
   version: "1.0"
 paths:
+  /balance:
+    get:
+      consumes:
+      - application/json
+      description: Get the balance of all accounts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.BalanceResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "504":
+          description: Gateway Timeout
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user balance
+      tags:
+      - wallet
+  /delete:
+    delete:
+      consumes:
+      - application/json
+      description: user delete
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "504":
+          description: Gateway Timeout
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete
+      tags:
+      - auth
+  /exchange:
+    post:
+      consumes:
+      - application/json
+      description: Exchange one currency to another for the authenticated user
+      parameters:
+      - description: Exchange request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ExchangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ExchangeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "402":
+          description: Payment Required
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "504":
+          description: Gateway Timeout
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Exchange currency
+      tags:
+      - wallet
+  /exchange/rates:
+    get:
+      consumes:
+      - application/json
+      description: Get the current exchange rates for supported currencies
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ExchangeRatesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "504":
+          description: Gateway Timeout
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all exchange rates
+      tags:
+      - wallet
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: user login
+      parameters:
+      - description: User data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "504":
+          description: Gateway Timeout
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+      summary: Login
+      tags:
+      - auth
   /register:
     post:
       consumes:
@@ -82,6 +390,105 @@ paths:
       summary: Creating a new user
       tags:
       - auth
+  /wallet/deposit:
+    post:
+      consumes:
+      - application/json
+      description: Deposit funds into a user's account for a specific currency
+      parameters:
+      - description: Deposit request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.AccountOperationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AccountOperationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "504":
+          description: Gateway Timeout
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Deposit funds into an account
+      tags:
+      - wallet
+  /wallet/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: Withdraw funds from a user's account for a specific currency
+      parameters:
+      - description: Withdraw request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.AccountOperationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AccountOperationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "402":
+          description: Payment Required
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+        "504":
+          description: Gateway Timeout
+          schema:
+            $ref: '#/definitions/models.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Withdraw funds from an account
+      tags:
+      - wallet
 schemes:
 - http
+securityDefinitions:
+  BearerAuth:
+    description: 'Type "Bearer" followed by a space and the token. Example: "Bearer
+      your_token"'
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

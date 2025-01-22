@@ -11,9 +11,10 @@ import (
 	"github.com/EvansTrein/RESTful_exchangerServer/pkg/logs"
 )
 
-// @title           Exchanger
+// @title           Currency exchanger
 // @version         1.0
-// @description
+// @description		REST API that works with - postgres as a database, a third-party gRPC server (for currency currencies)
+// @description		and Redis for caching responses from a third-party gRPC service
 
 // @contact.name   Evans Trein
 // @contact.email  evanstrein@icloud.com
@@ -22,6 +23,11 @@ import (
 // @host      localhost:8000
 // @BasePath  /api/v1
 // @schemes   http
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the token. Example: "Bearer your_token"
 
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/

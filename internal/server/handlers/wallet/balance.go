@@ -14,6 +14,18 @@ type balanceServ interface {
 	Balance(ctx context.Context, req models.BalanceRequest) (*models.BalanceResponse, error)
 }
 
+// @Summary Get user balance
+// @Description Get the balance of all accounts
+// @Tags wallet
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.BalanceResponse
+// @Failure 401 {object} models.HandlerResponse
+// @Failure 404 {object} models.HandlerResponse
+// @Failure 500 {object} models.HandlerResponse
+// @Failure 504 {object} models.HandlerResponse
+// @Router /balance [get]
 func Balance(log *slog.Logger, serv balanceServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Balance: call"
@@ -83,22 +95,3 @@ func Balance(log *slog.Logger, serv balanceServ) gin.HandlerFunc {
 	}
 }
 
-// Метод: **GET**
-// URL: **/api/v1/balance**
-// Заголовки:
-// _Authorization: Bearer JWT_TOKEN_
-
-// Ответ:
-
-// • Успех: ```200 OK```
-
-// ```json
-// {
-//   "balance":
-//   {
-//   "USD": "float",
-//   "RUB": "float",
-//   "EUR": "float"
-//   }
-// }
-// ``

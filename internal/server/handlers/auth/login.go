@@ -14,6 +14,18 @@ type loginServ interface {
 	Login(ctx context.Context, req models.LoginRequest) (*models.LoginResponse, error)
 }
 
+// @Summary Login
+// @Description user login
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body models.LoginRequest true "User data"
+// @Success 200 {object} models.LoginResponse
+// @Failure 400 {object} models.HandlerResponse
+// @Failure 404 {object} models.HandlerResponse
+// @Failure 504 {object} models.HandlerResponse
+// @Failure 500 {object} models.HandlerResponse
+// @Router /login [post]
 func Login(log *slog.Logger, serv loginServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Login: call"
@@ -76,34 +88,3 @@ func Login(log *slog.Logger, serv loginServ) gin.HandlerFunc {
 		ctx.JSON(200, result)
 	}
 }
-
-// Метод: **POST**
-// URL: **/api/v1/login**
-// Тело запроса:
-// ```json
-// {
-// "email": "string",
-// "password": "string"
-// }
-// ```
-
-// Ответ:
-
-// • Успех: ```200 OK```
-// ```json
-// {
-//   "token": "JWT_TOKEN"
-// }
-// ```
-
-// • Ошибка: ```401 Unauthorized```
-// ```json
-// {
-//   "error": "Invalid username or password"
-// }
-// ```
-
-// ▎Описание
-
-// Авторизация пользователя.
-// При успешной авторизации возвращается JWT-токен, который будет использоваться для аутентификации последующих запросов.

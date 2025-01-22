@@ -16,6 +16,22 @@ type exchangeServ interface {
 	Exchange(ctx context.Context, req models.ExchangeRequest) (*models.ExchangeResponse, error)
 }
 
+// @Summary Exchange currency
+// @Description Exchange one currency to another for the authenticated user
+// @Tags wallet
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body models.ExchangeRequest true "Exchange request"
+// @Success 200 {object} models.ExchangeResponse
+// @Failure 400 {object} models.HandlerResponse
+// @Failure 401 {object} models.HandlerResponse
+// @Failure 402 {object} models.HandlerResponse
+// @Failure 404 {object} models.HandlerResponse
+// @Failure 500 {object} models.HandlerResponse
+// @Failure 503 {object} models.HandlerResponse
+// @Failure 504 {object} models.HandlerResponse
+// @Router /exchange [post]
 func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Exchange: call"

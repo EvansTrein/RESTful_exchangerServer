@@ -14,6 +14,20 @@ type depositServ interface {
 	Deposit(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error)
 }
 
+// @Summary Deposit funds into an account
+// @Description Deposit funds into a user's account for a specific currency
+// @Tags wallet
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body models.AccountOperationRequest true "Deposit request"
+// @Success 200 {object} models.AccountOperationResponse
+// @Failure 400 {object} models.HandlerResponse
+// @Failure 401 {object} models.HandlerResponse
+// @Failure 404 {object} models.HandlerResponse
+// @Failure 500 {object} models.HandlerResponse
+// @Failure 504 {object} models.HandlerResponse
+// @Router /wallet/deposit [post]
 func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler Deposit: call"
@@ -98,42 +112,3 @@ func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 		ctx.JSON(200, result)
 	}
 }
-
-// Метод: **POST**
-// URL: **/api/v1/wallet/deposit**
-// Заголовки:
-// _Authorization: Bearer JWT_TOKEN_
-
-// Тело запроса:
-// ```
-// {
-//   "amount": 100.00,
-//   "currency": "USD" // (USD, RUB, EUR)
-// }
-// ```
-
-// Ответ:
-
-// • Успех: ```200 OK```
-// ```json
-// {
-//   "message": "Account topped up successfully",
-//   "new_balance": {
-//     "USD": "float",
-//     "RUB": "float",
-//     "EUR": "float"
-//   }
-// }
-// ```
-
-// • Ошибка: ```400 Bad Request```
-// ```json
-// {
-// "error": "Invalid amount or currency"
-// }
-// ```
-
-// ▎Описание
-
-// Позволяет пользователю пополнить свой счет. Проверяется корректность суммы и валюты.
-// Обновляется баланс пользователя в базе данных.

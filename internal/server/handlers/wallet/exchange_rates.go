@@ -14,6 +14,18 @@ type exchangeRatesServ interface {
 	ExchangeRates(ctx context.Context) (*models.ExchangeRatesResponse, error)
 }
 
+// @Summary Get all exchange rates
+// @Description Get the current exchange rates for supported currencies
+// @Tags wallet
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.ExchangeRatesResponse
+// @Failure 401 {object} models.HandlerResponse
+// @Failure 500 {object} models.HandlerResponse
+// @Failure 503 {object} models.HandlerResponse
+// @Failure 504 {object} models.HandlerResponse
+// @Router /exchange/rates [get]
 func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "Handler ExchangeRates: call"
@@ -66,34 +78,3 @@ func ExchangeRates(log *slog.Logger, serv exchangeRatesServ) gin.HandlerFunc {
 		ctx.JSON(200, result)
 	}
 }
-
-// Метод: **GET**
-// URL: **/api/v1/exchange/rates**
-// Заголовки:
-// _Authorization: Bearer JWT_TOKEN_
-
-// Ответ:
-
-// • Успех: ```200 OK```
-// ```json
-// {
-//     "rates":
-//     {
-//       "USD": "float",
-//       "RUB": "float",
-//       "EUR": "float"
-//     }
-// }
-// ```
-
-// • Ошибка: ```500 Internal Server Error```
-// ```json
-// {
-//   "error": "Failed to retrieve exchange rates"
-// }
-// ```
-
-// ▎Описание
-
-// Получение актуальных курсов валют из внешнего gRPC-сервиса.
-// Возвращает курсы всех поддерживаемых валют.
