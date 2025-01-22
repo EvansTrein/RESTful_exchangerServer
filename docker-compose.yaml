@@ -36,6 +36,26 @@ services:
       - redis_data:/data
     networks:
       - server_net
+  
+  grpc_exchanger:
+    container_name: grpc_exchanger_server
+    image: evanstrein/grpc_exchanger:latest
+    ports:
+      - ${SERVICES_PORT_GRPC_SERVER}:${SERVICES_PORT_GRPC_SERVER}
+    networks:
+      - server_net
+  
+  api_wallet:
+    container_name: api_wallet
+    build: .
+    depends_on:
+      - redis
+      - grpc_exchanger
+      - db_wallet
+    networks:
+      - server_net
+    ports:
+      - ${HTTP_API_PORT}:${HTTP_API_PORT}
 
 
 volumes: 

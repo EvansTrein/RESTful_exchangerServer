@@ -38,5 +38,6 @@ func (s *HttpServer) InitRouters(conf *config.HTTPServer, auth *servAuth.Auth, w
 	walletRouters.GET("/exchange/rates", handlerWallet.ExchangeRates(s.log, wallet))
 	walletRouters.POST("/exchange", handlerWallet.Exchange(s.log, wallet))
 
+	// http://localhost:8000/swagger/index.html
 	s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
