@@ -10,7 +10,7 @@ Language: [EN](https://github.com/EvansTrein/RESTful_exchangerServer/blob/main/R
 
 This runs in docker, so you need: Postgres, Redis and a 3rd party gRPC service to run (the image will be downloaded from my dockerHub, it weighs 50 MB)
 
-Clone or download the repository - type `make run-docker-compose`.
+Clone or download the repository - type `make run-docker-compose`
 
 If you don't use make - type `docker compose --env-file config.env up --build -d`
 
