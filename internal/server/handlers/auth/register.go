@@ -14,6 +14,14 @@ type registerServ interface {
 	Register(ctx context.Context, req models.RegisterRequest) (*models.RegisterResponse, error)
 }
 
+// Register is a Gin handler function that handles user registration requests.
+// It binds the incoming JSON request to a RegisterRequest struct and validates the data.
+// If the data is invalid, it returns a 400 Bad Request.
+// It calls the service to register the user and returns the appropriate response.
+// If the email already exists, it returns a 400 Bad Request.
+// If the request times out, it returns a 504 Gateway Timeout.
+// On successful registration, it returns a 201 Created response with the registration result.
+//
 // @Summary Creating a new user
 // @Description Creating a new user with the provided data
 // @Tags auth

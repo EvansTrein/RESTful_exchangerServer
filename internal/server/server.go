@@ -19,6 +19,8 @@ type HttpServer struct {
 	conf   *config.HTTPServer
 }
 
+// New creates and returns a new instance of the HttpServer.
+// It initializes the Gin router and sets up the server configuration.
 func New(log *slog.Logger, conf *config.HTTPServer) *HttpServer {
 	router := gin.Default()
 
@@ -29,6 +31,9 @@ func New(log *slog.Logger, conf *config.HTTPServer) *HttpServer {
 	}
 }
 
+// Start starts the HTTP server and listens for incoming requests.
+// It configures the server with the provided address, port, and timeout settings.
+// If the server fails to start, an error is returned.
 func (s *HttpServer) Start() error {
 	log := s.log.With(
 		slog.String("Address", s.conf.Address+":"+s.conf.Port),
@@ -57,6 +62,9 @@ func (s *HttpServer) Start() error {
 	return nil
 }
 
+// Stop gracefully shuts down the HTTP server.
+// It uses a context with a timeout to ensure the server does not hang indefinitely.
+// If the shutdown fails, an error is logged and returned.
 func (s *HttpServer) Stop() error {
 	s.log.Debug("HTTP server: stop started")
 

@@ -23,6 +23,10 @@ type App struct {
 	servGRPC *grpcclient.ServerGRPC
 }
 
+// New initializes and returns a new instance of the App struct.
+// It sets up the HTTP server, database connections (Postgres and Redis), gRPC client, and services (Auth and Wallet).
+// If any initialization step fails, the function panics.
+// The function logs the creation process and returns the fully initialized App instance.
 func New(conf *config.Config, log *slog.Logger) *App {
 	log.Debug("application: creation is started")
 
@@ -63,6 +67,9 @@ func New(conf *config.Config, log *slog.Logger) *App {
 	return app
 }
 
+// MustStart starts the application, including the HTTP server.
+// If the server fails to start, the function panics.
+// The function logs the start process and the port on which the server is running.
 func (a *App) MustStart() {
 	a.log.Debug("application: started")
 
@@ -72,6 +79,10 @@ func (a *App) MustStart() {
 	}
 }
 
+// Stop gracefully shuts down the application, stopping the HTTP server, gRPC server, Redis, and database connections.
+// It also stops the Auth and Wallet services.
+// If any step fails, the function logs the error and returns it.
+// The function logs the successful shutdown process and cleans up the App instance.
 func (a *App) Stop() error {
 	a.log.Debug("application: stop started")
 

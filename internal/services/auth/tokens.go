@@ -8,6 +8,9 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+// GenerateToken generates a JWT token for the given user ID.
+// The token includes the user ID and an expiration time.
+// It is signed using the service's secret key.
 func (a *Auth) GenerateToken(id uint) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": id,
@@ -22,6 +25,9 @@ func (a *Auth) GenerateToken(id uint) (string, error) {
 	return signedToken, nil
 }
 
+// ParseToken parses and validates a JWT token.
+// It checks the token's signing method and verifies its signature using the service's secret key.
+// If the token is expired, it still returns the token for further processing.
 func (a *Auth) ParseToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -39,6 +45,9 @@ func (a *Auth) ParseToken(tokenString string) (*jwt.Token, error) {
 	return token, nil
 }
 
+// TokenPayloadExtraction extracts the user ID from the JWT token's claims.
+// It returns a PayloadToken struct containing the user ID.
+// If the claims are invalid or the user ID is missing, it returns an error.
 func (a *Auth) TokenPayloadExtraction(token *jwt.Token) (*models.PayloadToken, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {

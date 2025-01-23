@@ -14,6 +14,13 @@ type deleteServ interface {
 	DeleteUser(ctx context.Context, userId uint) error
 }
 
+// Delete is a Gin handler function that handles the deletion of a user.
+// It retrieves the user ID from the context, validates it, and calls the service to delete the user.
+// If the user ID is missing or invalid, it returns a 500 Internal Server Error.
+// If the user is not found, it returns a 404 Not Found.
+// If the request times out, it returns a 504 Gateway Timeout.
+// On successful deletion, it returns a 200 OK response.
+//
 // @Summary Delete
 // @Description user delete
 // @Tags auth
@@ -36,6 +43,7 @@ func Delete(log *slog.Logger, serv deleteServ) gin.HandlerFunc {
 		)
 		log.Debug("user removal request")
 
+		// get user id from context
 		userID, exists := ctx.Get("userID")
 		if !exists {
 			ctx.JSON(500, models.HandlerResponse{

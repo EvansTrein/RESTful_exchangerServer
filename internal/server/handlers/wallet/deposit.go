@@ -14,6 +14,14 @@ type depositServ interface {
 	Deposit(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error)
 }
 
+// Deposit is a Gin handler function that handles depositing funds into a user's account.
+// It binds the incoming JSON request to a struct, validates the data, and calls the service to deposit funds.
+// If the data is invalid, it returns a 400 Bad Request.
+// If the user ID is missing or invalid, it returns a 500 Internal Server Error.
+// If the currency or account is not found, it returns a 404 Not Found.
+// If the request times out, it returns a 504 Gateway Timeout.
+// On success, it returns a 200 OK response with the deposit result.
+//
 // @Summary Deposit funds into an account
 // @Description Deposit funds into a user's account for a specific currency
 // @Tags wallet
@@ -47,6 +55,7 @@ func Deposit(log *slog.Logger, serv depositServ) gin.HandlerFunc {
 
 		log.Debug("request data has been successfully validated", "data", req)
 
+		// get user id from context
 		userID, exists := ctx.Get("userID")
 		if !exists {
 			ctx.JSON(500, models.HandlerResponse{

@@ -9,6 +9,9 @@ import (
 	"github.com/go-redis/redis"
 )
 
+// SetExchange stores the exchange rate for a given currency pair in the Redis cache.
+// The key is constructed from the currency pair, and the value is stored with a TTL.
+// If the operation fails, it returns an error.
 func (r *RedisDB) SetExchange(fromCurrency, toCurrency string, value float32) error {
 	op := "Redis: saving the exchange rate in the cache"
 	log := r.log.With(slog.String("operation", op))
@@ -26,6 +29,9 @@ func (r *RedisDB) SetExchange(fromCurrency, toCurrency string, value float32) er
 	return nil
 }
 
+// GetExchange retrieves the exchange rate for a given currency pair from the Redis cache.
+// If the key is not found, it returns a specific error (ErrRateInCacheNotFound).
+// If the operation fails, it returns an error.
 func (r *RedisDB) GetExchange(fromCurrency, toCurrency string) (float32, error) {
 	op := "Redis: getting exchange rate from cache"
 	log := r.log.With(slog.String("operation", op))

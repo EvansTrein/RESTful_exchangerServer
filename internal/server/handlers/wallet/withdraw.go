@@ -14,6 +14,14 @@ type withdrawServ interface {
 	Withdraw(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error)
 }
 
+// Withdraw is a Gin handler function that handles withdrawing funds from a user's account.
+// It binds the incoming JSON request to a struct, validates the data, and calls the service to withdraw funds.
+// If the data is invalid, it returns a 400 Bad Request.
+// If the user ID is missing or invalid, it returns a 500 Internal Server Error.
+// If there are insufficient funds or the currency/account is not found, it returns a 402 Payment Required or 404 Not Found.
+// If the request times out, it returns a 504 Gateway Timeout.
+// On success, it returns a 200 OK response with the withdrawal result.
+//
 // @Summary Withdraw funds from an account
 // @Description Withdraw funds from a user's account for a specific currency
 // @Tags wallet
@@ -48,6 +56,7 @@ func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
 
 		log.Debug("request data has been successfully validated", "data", req)
 
+		// get user id from context
 		userID, exists := ctx.Get("userID")
 		if !exists {
 			ctx.JSON(500, models.HandlerResponse{
@@ -121,42 +130,3 @@ func Withdraw(log *slog.Logger, serv withdrawServ) gin.HandlerFunc {
 		ctx.JSON(200, result)
 	}
 }
-
-// Метод: **POST**
-// URL: **/api/v1/wallet/withdraw**
-// Заголовки:
-// _Authorization: Bearer JWT_TOKEN_
-
-// Тело запроса:
-// ```
-// {
-//     "amount": 50.00,
-//     "currency": "USD" // USD, RUB, EUR)
-// }
-// ```
-
-// Ответ:
-
-// • Успех: ```200 OK```
-// ```json
-// {
-//   "message": "Withdrawal successful",
-//   "new_balance": {
-//     "USD": "float",
-//     "RUB": "float",
-//     "EUR": "float"
-//   }
-// }
-// ```
-
-// • Ошибка: 400 Bad Request
-// ```json
-// {
-//   "error": "Insufficient funds or invalid amount"
-// }
-// ```
-
-// ▎Описание
-
-// Позволяет пользователю вывести средства со своего счета.
-// Проверяется наличие достаточного количества средств и корректность суммы.

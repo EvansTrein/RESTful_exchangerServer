@@ -20,6 +20,10 @@ const (
 	apiVersion = "v1"
 )
 
+// InitRouters initializes the HTTP routes for the application.
+// It sets up routes for authentication (register, login, delete) and wallet operations (balance, deposit, withdraw, exchange rates, and exchange).
+// Middleware for timeout and logging is applied to the routes.
+// Additionally, it sets up the Swagger documentation route for API exploration.
 func (s *HttpServer) InitRouters(conf *config.HTTPServer, auth *servAuth.Auth, wallet *servWallet.Wallet) {
 	authRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
 	walletRouters := s.router.Group(fmt.Sprintf("/api/%s", apiVersion))
@@ -38,6 +42,6 @@ func (s *HttpServer) InitRouters(conf *config.HTTPServer, auth *servAuth.Auth, w
 	walletRouters.GET("/exchange/rates", handlerWallet.ExchangeRates(s.log, wallet))
 	walletRouters.POST("/exchange", handlerWallet.Exchange(s.log, wallet))
 
-	// http://localhost:8000/swagger/index.html
+	// Swagger documentation route - http://localhost:8000/swagger/index.html
 	s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }

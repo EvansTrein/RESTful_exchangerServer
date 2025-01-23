@@ -25,6 +25,8 @@ var (
 	ErrRateInCacheNotFound  = errors.New("exchange rate is not in the cache")
 )
 
+// Wallet is a service that handles wallet-related operations such as balance retrieval, deposits, withdrawals, and currency exchange.
+// It interacts with the database, cache, and gRPC services to perform these operations.
 type Wallet struct {
 	log        *slog.Logger
 	clientGRPC grpcclient.ClientGRPC
@@ -32,6 +34,8 @@ type Wallet struct {
 	cacheDB    storages.CacheDB
 }
 
+// New creates a new instance of the Wallet service.
+// It initializes the service with a logger, gRPC client, database storage, and cache storage.
 func New(log *slog.Logger, gRPC grpcclient.ClientGRPC, db storages.StoreWallet, cacheDB storages.CacheDB) *Wallet {
 	log.Debug("service Wallet: started creating")
 
@@ -44,6 +48,8 @@ func New(log *slog.Logger, gRPC grpcclient.ClientGRPC, db storages.StoreWallet, 
 	}
 }
 
+// Stop gracefully shuts down the Wallet service.
+// It cleans up resources and logs the shutdown process.
 func (w *Wallet) Stop() error {
 	w.log.Debug("service Wallet: stop started")
 
@@ -55,6 +61,8 @@ func (w *Wallet) Stop() error {
 	return nil
 }
 
+// Balance retrieves the balance of all accounts for the given user.
+// It fetches the account balances from the database and returns them in a response.
 func (w *Wallet) Balance(ctx context.Context, req models.BalanceRequest) (*models.BalanceResponse, error) {
 	op := "service Wallet: getting the balance of all accounts"
 	log := w.log.With(slog.String("operation", op))
@@ -75,6 +83,8 @@ func (w *Wallet) Balance(ctx context.Context, req models.BalanceRequest) (*model
 	return &resp, nil
 }
 
+// Deposit handles depositing funds into a user's account.
+// It updates the account balance in the database and returns the new balance.
 func (w *Wallet) Deposit(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error) {
 	op := "service Wallet: deposit request received"
 	log := w.log.With(slog.String("operation", op))
@@ -98,6 +108,8 @@ func (w *Wallet) Deposit(ctx context.Context, req *models.AccountOperationReques
 	return &resp, nil
 }
 
+// Withdraw handles withdrawing funds from a user's account.
+// It updates the account balance in the database and returns the new balance.
 func (w *Wallet) Withdraw(ctx context.Context, req *models.AccountOperationRequest) (*models.AccountOperationResponse, error) {
 	op := "service Wallet: withdraw request received"
 	log := w.log.With(slog.String("operation", op))
@@ -121,6 +133,9 @@ func (w *Wallet) Withdraw(ctx context.Context, req *models.AccountOperationReque
 	return &resp, nil
 }
 
+// Exchange handles currency exchange for the user.
+// It retrieves the exchange rate, calculates the new balances, and updates the database.
+// If the exchange rate is not in the cache, it fetches it from the gRPC server.
 func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*models.ExchangeResponse, error) {
 	op := "service Wallet: currency exchange request"
 	log := w.log.With(slog.String("operation", op))
@@ -210,6 +225,9 @@ func (w *Wallet) Exchange(ctx context.Context, req models.ExchangeRequest) (*mod
 	return &resp, nil
 }
 
+
+// ExchangeRates retrieves all exchange rates from the gRPC server.
+// It returns the rates in a response.
 func (w *Wallet) ExchangeRates(ctx context.Context) (*models.ExchangeRatesResponse, error) {
 	op := "service Wallet: obtaining all exchange rates"
 	log := w.log.With(slog.String("operation", op))
@@ -228,6 +246,9 @@ func (w *Wallet) ExchangeRates(ctx context.Context) (*models.ExchangeRatesRespon
 	return &resp, nil
 }
 
+// getExchangeRateAsync fetches the exchange rate asynchronously.
+// It first checks the cache for the rate, and if not found, it fetches it from the gRPC server.
+// The result is sent back through a channel.
 func (w *Wallet) getExchangeRateAsync(ctx context.Context, rate *models.ExchangeRate, errChan chan<- error) {
 	go func() {
 		defer close(errChan)

@@ -8,6 +8,10 @@ import (
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 )
 
+// CurrencyExchangeLogic handles the logic for currency exchange.
+// It calculates the new balances for the base and target currencies after the exchange.
+// It ensures that the exchange rate and amount are positive and that the resulting balances are not negative.
+// If any validation fails, it returns an error.
 func (w *Wallet) CurrencyExchangeLogic(data *models.CurrencyExchangeData) (*models.CurrencyExchangeResult, error) {
 	op := "service Wallet: currency exchange logic operation"
 	log := w.log.With(slog.String("operation", op))

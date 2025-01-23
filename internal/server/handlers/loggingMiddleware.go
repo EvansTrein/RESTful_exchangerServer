@@ -15,6 +15,11 @@ type checkToken interface {
 	TokenPayloadExtraction(token *jwt.Token) (*models.PayloadToken, error)
 }
 
+// LoggingMiddleware is a Gin middleware function that logs incoming requests and validates JWT tokens.
+// It checks for the presence and format of the "Authorization" header.
+// If the header is missing or invalid, it returns a 401 Unauthorized response.
+// It parses and validates the JWT token, extracts the token payload, and sets the user ID in the context.
+// If any step fails, it logs the error and returns an appropriate HTTP response.
 func LoggingMiddleware(log *slog.Logger, ch checkToken) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "LoggingMiddleware"
@@ -95,6 +100,8 @@ func LoggingMiddleware(log *slog.Logger, ch checkToken) gin.HandlerFunc {
 		}
 
 		log.Debug("token payload successfully received, authorization passed successfully", "tokenPayload", tokenPayload)
+
+		// save the user id from the token in the context, we will need it later to form a request to other resources 
 		ctx.Set("userID", tokenPayload.UserID)
 		ctx.Next()
 	}

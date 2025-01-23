@@ -8,12 +8,17 @@ import (
 	"github.com/go-redis/redis"
 )
 
+// RedisDB represents a connection to a Redis database.
+// It includes a Redis client, a logger, and a TTL (Time-To-Live) for keys.
 type RedisDB struct {
 	client  *redis.Client
 	log     *slog.Logger
 	ttlKeys time.Duration
 }
 
+// New creates a new RedisDB instance and establishes a connection to the Redis server.
+// It takes the host, port, password, and TTL for keys as parameters.
+// If the connection fails, it returns an error.
 func New(log *slog.Logger, host string, port string, password string, ttlKeys time.Duration) (*RedisDB, error) {
 	log.Debug("redis: connection to Redis started")
 
@@ -31,6 +36,8 @@ func New(log *slog.Logger, host string, port string, password string, ttlKeys ti
 	return &RedisDB{client: client, ttlKeys: ttlKeys, log: log}, nil
 }
 
+// Close closes the connection to the Redis server.
+// If the connection is already closed, it returns an error.
 func (r *RedisDB) Close() error {
 	r.log.Debug("redis: stop started")
 

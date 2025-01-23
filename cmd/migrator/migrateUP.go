@@ -10,6 +10,12 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 )
 
+// main is the entry point of the migration script.
+// It reads command-line flags for the database connection path and the path to the migration files.
+// If either path is not provided, the program panics.
+// It then initializes the migration tool and applies all pending migrations.
+// If no migrations are needed, it logs a message and exits.
+// If an error occurs during migration, the program panics.
 func main() {
 	var pathDB string
 	var fileMigrationPath string

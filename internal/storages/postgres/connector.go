@@ -8,12 +8,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// PostgresDB represents a connection to a PostgreSQL database.
+// It includes a database connection and a logger.
 type PostgresDB struct {
 	db  *sql.DB
 	log *slog.Logger
 }
 
-// database connection
+// New creates a new PostgresDB instance and establishes a connection to the PostgreSQL server.
+// It takes the database connection string and a logger as parameters.
+// If the connection fails, it returns an error.
 func New(storagePath string, log *slog.Logger) (*PostgresDB, error) {
 	log.Debug("database: connection to Postgres started")
 
@@ -30,7 +34,8 @@ func New(storagePath string, log *slog.Logger) (*PostgresDB, error) {
 	return &PostgresDB{db: db, log: log}, nil
 }
 
-// database disconnection
+// Close closes the connection to the PostgreSQL server.
+// If the connection is already closed, it returns an error.
 func (s *PostgresDB) Close() error {
 	s.log.Debug("database: stop started")
 

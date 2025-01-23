@@ -8,6 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// TimeoutMiddleware is a Gin middleware function that sets a timeout for request execution.
+// It creates a new context with a timeout based on the configured WriteTimeout from the HTTP server configuration.
+// The middleware logs the timeout duration and ensures the request is canceled if it exceeds the timeout.
+// The updated context is passed to the next handler in the chain.
 func TimeoutMiddleware(log *slog.Logger, conf *config.HTTPServer) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		op := "TimeoutMiddleware: call"

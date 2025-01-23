@@ -16,12 +16,17 @@ var (
 	ErrInvalidLoginData   = errors.New("invalid email or password")
 )
 
+// Auth is a service that handles user authentication and registration.
+// It provides methods for user registration, login, and deletion.
+// The service interacts with the database to store and retrieve user information.
 type Auth struct {
 	log       *slog.Logger
 	db        storages.StoreAuth
 	secretKey string
 }
 
+// New creates a new instance of the Auth service.
+// It initializes the service with a logger, database storage, and a secret key for token generation.
 func New(log *slog.Logger, db storages.StoreAuth, secretKey string) *Auth {
 	log.Debug("Auth service: started creating")
 
@@ -33,6 +38,8 @@ func New(log *slog.Logger, db storages.StoreAuth, secretKey string) *Auth {
 	}
 }
 
+// Stop gracefully shuts down the Auth service.
+// It cleans up resources and logs the shutdown process.
 func (a *Auth) Stop() error {
 	a.log.Debug("service Auth: stop started")
 
@@ -42,6 +49,10 @@ func (a *Auth) Stop() error {
 	return nil
 }
 
+
+// Register handles user registration.
+// It hashes the user's password, stores the user in the database, and returns a response with the user ID.
+// If the email already exists, it returns an error.
 func (a *Auth) Register(ctx context.Context, req models.RegisterRequest) (*models.RegisterResponse, error) {
 	op := "service Auth: user registration"
 	log := a.log.With(slog.String("operation", op))
@@ -65,6 +76,10 @@ func (a *Auth) Register(ctx context.Context, req models.RegisterRequest) (*model
 	return &models.RegisterResponse{Message: "user successfully created", UserID: id}, nil
 }
 
+
+// Login handles user authentication.
+// It verifies the user's credentials, generates a JWT token, and returns it in the response.
+// If the user is not found or the password is incorrect, it returns an error.
 func (a *Auth) Login(ctx context.Context, req models.LoginRequest) (*models.LoginResponse, error) {
 	op := "service Auth: user login"
 	log := a.log.With(slog.String("operation", op))
@@ -101,6 +116,9 @@ func (a *Auth) Login(ctx context.Context, req models.LoginRequest) (*models.Logi
 	return &tokenForUser, nil
 }
 
+// DeleteUser handles user deletion.
+// It removes the user from the database based on the provided user ID.
+// If the user is not found, it returns an error.
 func (a *Auth) DeleteUser(ctx context.Context, userId uint) error {
 	op := "service Auth: delete user"
 	log := a.log.With(slog.String("operation", op))

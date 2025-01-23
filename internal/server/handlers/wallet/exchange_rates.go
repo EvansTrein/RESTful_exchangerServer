@@ -14,6 +14,11 @@ type exchangeRatesServ interface {
 	ExchangeRates(ctx context.Context) (*models.ExchangeRatesResponse, error)
 }
 
+// ExchangeRates is a Gin handler function that retrieves the current exchange all rates for supported currencies.
+// It calls the service to fetch the exchange rates and returns the result.
+// If the gRPC server is unavailable or the request times out, it returns a 503 Service Unavailable or 504 Gateway Timeout.
+// On success, it returns a 200 OK response with the exchange rates.
+//
 // @Summary Get all exchange rates
 // @Description Get the current exchange rates for supported currencies
 // @Tags wallet

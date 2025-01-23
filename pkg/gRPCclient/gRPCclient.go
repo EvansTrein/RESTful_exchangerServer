@@ -20,16 +20,23 @@ var (
 	ErrServerNotCurrency = errors.New("gRPC currency is not supported")
 )
 
+// ClientGRPC defines the interface for gRPC client operations.
+// It includes methods for retrieving all exchange rates and specific exchange rates.
 type ClientGRPC interface {
 	GetAllRates(ctx context.Context, req *models.ExchangeRatesResponse) error
 	ExchangeRate(ctx context.Context, req *models.ExchangeRate) error
 }
 
+// ServerGRPC represents a gRPC client connection.
+// It includes a logger and a gRPC connection.
 type ServerGRPC struct {
 	log  *slog.Logger
 	conn *grpc.ClientConn
 }
 
+// New creates a new instance of the ServerGRPC and establishes a connection to the gRPC server.
+// It takes the server address, port, and a logger as parameters.
+// If the connection fails, it returns an error.
 func New(log *slog.Logger, address, port string) (*ServerGRPC, error) {
 	grpcAddr := fmt.Sprintf("%s:%s", address, port)
 	log.Debug("gRPC server: started creating", "address", grpcAddr)
@@ -44,6 +51,8 @@ func New(log *slog.Logger, address, port string) (*ServerGRPC, error) {
 	return &ServerGRPC{log: log, conn: conn}, nil
 }
 
+// Close closes the connection to the gRPC server.
+// If the connection is already closed, it returns an error.
 func (s *ServerGRPC) Close() error {
 	s.log.Debug("gRPC server: stop started")
 
@@ -58,6 +67,9 @@ func (s *ServerGRPC) Close() error {
 	return nil
 }
 
+// GetAllRates retrieves all exchange rates from the gRPC server.
+// It populates the provided ExchangeRatesResponse with the retrieved rates.
+// If the gRPC server is unavailable or the request times out, it returns an error.
 func (s *ServerGRPC) GetAllRates(ctx context.Context, req *models.ExchangeRatesResponse) error {
 	op := "gRPC server: obtaining all exchange rates"
 	log := s.log.With(slog.String("operation", op))
@@ -86,6 +98,9 @@ func (s *ServerGRPC) GetAllRates(ctx context.Context, req *models.ExchangeRatesR
 	return nil
 }
 
+// ExchangeRate retrieves the exchange rate for a specific currency pair from the gRPC server.
+// It populates the provided ExchangeRate with the retrieved rate.
+// If the gRPC server is unavailable, the request times out, or the currency is not supported, it returns an error.
 func (s *ServerGRPC) ExchangeRate(ctx context.Context, req *models.ExchangeRate) error {
 	op := "gRPC server: currency exchange rate request"
 	log := s.log.With(slog.String("operation", op))

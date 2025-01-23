@@ -16,6 +16,15 @@ type exchangeServ interface {
 	Exchange(ctx context.Context, req models.ExchangeRequest) (*models.ExchangeResponse, error)
 }
 
+// Exchange is a Gin handler function that handles currency exchange for the authenticated user.
+// It binds the incoming JSON request to a struct, validates the data, and calls the service to perform the exchange.
+// If the data is invalid or the currencies are the same, it returns a 400 Bad Request.
+// If the user ID is missing or invalid, it returns a 500 Internal Server Error.
+// If the user, account, or currency is not found, it returns a 404 Not Found.
+// If there are insufficient funds, it returns a 402 Payment Required.
+// If the request times out or the gRPC server is unavailable, it returns a 504 Gateway Timeout or 503 Service Unavailable.
+// On success, it returns a 200 OK response with the exchange result.
+//
 // @Summary Exchange currency
 // @Description Exchange one currency to another for the authenticated user
 // @Tags wallet
@@ -61,6 +70,7 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 
 		log.Debug("request data has been successfully validated", "data", req)
 
+		// get user id from context
 		userID, exists := ctx.Get("userID")
 		if !exists {
 			ctx.JSON(500, models.HandlerResponse{
@@ -158,45 +168,3 @@ func Exchange(log *slog.Logger, serv exchangeServ) gin.HandlerFunc {
 		ctx.JSON(200, result)
 	}
 }
-
-// Метод: **POST**
-// URL: **/api/v1/exchange**
-// Заголовки:
-// _Authorization: Bearer JWT_TOKEN_
-
-// Тело запроса:
-// ```json
-// {
-//   "from_currency": "USD",
-//   "to_currency": "EUR",
-//   "amount": 100.00
-// }
-// ```
-
-// Ответ:
-
-// • Успех: ```200 OK```
-// ```json
-// {
-//   "message": "Exchange successful",
-//   "exchanged_amount": 85.00,
-//   "new_balance":
-//   {
-//   "USD": 0.00,
-//   "EUR": 85.00
-//   }
-// }
-// ```
-
-// • Ошибка: 400 Bad Request
-// ```json
-// {
-//   "error": "Insufficient funds or invalid currencies"
-// }
-// ```
-
-// ▎Описание
-
-// Курс валют осуществляется по данным сервиса exchange (если в течении небольшого времени был запрос от клиента курса валют (**/api/v1/exchange**) до обмена, то
-// брать курс из кэша, если же запроса курса валют не было или он запрашивался слишком давно, то нужно осуществить gRPC-вызов к внешнему сервису, который предоставляет актуальные курсы валют)
-// Проверяется наличие средств для обмена, и обновляется баланс пользователя.

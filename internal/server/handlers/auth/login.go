@@ -14,6 +14,14 @@ type loginServ interface {
 	Login(ctx context.Context, req models.LoginRequest) (*models.LoginResponse, error)
 }
 
+// Login is a Gin handler function that handles user login requests.
+// It binds the incoming JSON request to a LoginRequest struct and validates the data.
+// If the data is invalid, it returns a 400 Bad Request.
+// It calls the service to authenticate the user and returns the appropriate response.
+// If the login data is invalid or the user is not found, it returns a 400 Bad Request or 404 Not Found, respectively.
+// If the request times out, it returns a 504 Gateway Timeout.
+// On successful login, it returns a 200 OK response with the login result.
+//
 // @Summary Login
 // @Description user login
 // @Tags auth

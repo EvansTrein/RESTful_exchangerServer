@@ -39,6 +39,9 @@ type Redis struct {
 	TTLKeys  time.Duration `env:"TTL_KEYS"`
 }
 
+// MustLoad loads the configuration from a file specified via a command-line flag.
+// If the configuration file does not exist or an error occurs while reading it, the program terminates with a fatal error.
+// Upon successful loading of the configuration, the function returns a pointer to the Config struct.
 func MustLoad() *Config {
 	var cfg Config
 	var filePath string

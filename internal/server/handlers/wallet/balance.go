@@ -14,6 +14,13 @@ type balanceServ interface {
 	Balance(ctx context.Context, req models.BalanceRequest) (*models.BalanceResponse, error)
 }
 
+// Balance is a Gin handler function that retrieves the balance of all accounts for the authenticated user.
+// It gets the user ID from the context, validates it, and calls the service to fetch the balance.
+// If the user ID is missing or invalid, it returns a 500 Internal Server Error.
+// If the user is not found, it returns a 404 Not Found.
+// If the request times out, it returns a 504 Gateway Timeout.
+// On success, it returns a 200 OK response with the balance data.
+// 
 // @Summary Get user balance
 // @Description Get the balance of all accounts
 // @Tags wallet
@@ -36,6 +43,7 @@ func Balance(log *slog.Logger, serv balanceServ) gin.HandlerFunc {
 		)
 		log.Debug("request for balance of all accounts")
 
+		// get user id from context
 		userID, exists := ctx.Get("userID")
 		if !exists {
 			ctx.JSON(500, models.HandlerResponse{
@@ -66,24 +74,24 @@ func Balance(log *slog.Logger, serv balanceServ) gin.HandlerFunc {
 			case services.ErrUserNotFound:
 				log.Error("user not found", "error", err)
 				ctx.JSON(404, models.HandlerResponse{
-					Status: http.StatusNotFound, 
-					Error: err.Error(), 
+					Status:  http.StatusNotFound,
+					Error:   err.Error(),
 					Message: "the balance of a non-existent user was requested",
 				})
 				return
 			case context.DeadlineExceeded:
 				log.Error("failed to send data", "error", err)
 				ctx.JSON(504, models.HandlerResponse{
-					Status: http.StatusGatewayTimeout, 
-					Error: err.Error(), 
+					Status:  http.StatusGatewayTimeout,
+					Error:   err.Error(),
 					Message: "the waiting time for a response from the internal service has expired",
 				})
 				return
 			default:
 				log.Error("failed to send data", "error", err)
 				ctx.JSON(500, models.HandlerResponse{
-					Status: http.StatusInternalServerError, 
-					Error: err.Error(),
+					Status:  http.StatusInternalServerError,
+					Error:   err.Error(),
 					Message: "failed to send data",
 				})
 				return
@@ -94,4 +102,3 @@ func Balance(log *slog.Logger, serv balanceServ) gin.HandlerFunc {
 		ctx.JSON(200, result)
 	}
 }
-

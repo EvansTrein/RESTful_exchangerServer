@@ -12,6 +12,8 @@ import (
 	"github.com/EvansTrein/RESTful_exchangerServer/models"
 )
 
+// CreateUser creates a new user in the database and initializes their accounts for all supported currencies.
+// It returns the user ID if successful, or an error if the operation fails.
 func (db *PostgresDB) CreateUser(ctx context.Context, req models.RegisterRequest) (uint, error) {
 	op := "Database: user registration"
 	log := db.log.With(slog.String("operation", op))
@@ -49,6 +51,8 @@ func (db *PostgresDB) CreateUser(ctx context.Context, req models.RegisterRequest
 	return id, nil
 }
 
+// SearchUser retrieves a user from the database based on their email.
+// It returns the user details if found, or an error if the user is not found or the operation fails.
 func (db *PostgresDB) SearchUser(ctx context.Context, req models.LoginRequest) (*models.User, error) {
 	op := "Database: user login"
 	log := db.log.With(slog.String("operation", op))
@@ -80,6 +84,10 @@ func (db *PostgresDB) SearchUser(ctx context.Context, req models.LoginRequest) (
 	return &user, nil
 }
 
+
+// DeleteUser deletes a user from the database based on their ID.
+// It locks the user's accounts, deletes the user, and commits the transaction.
+// If the user is not found or the operation fails, it returns an error.
 func (db *PostgresDB) DeleteUser(ctx context.Context, userId uint) error {
 	op := "Database: user removal"
 	log := db.log.With(slog.String("operation", op))
@@ -142,6 +150,9 @@ func (db *PostgresDB) DeleteUser(ctx context.Context, userId uint) error {
 	return nil
 }
 
+
+// AllAccountsBalance retrieves the balances of all accounts for a given user.
+// It returns a map of currency codes to balances, or an error if the user is not found or the operation fails.
 func (db *PostgresDB) AllAccountsBalance(ctx context.Context, userId uint) (map[string]float32, error) {
 	op := "Database: balancing all accounts"
 	log := db.log.With(slog.String("operation", op))
@@ -190,6 +201,9 @@ func (db *PostgresDB) AllAccountsBalance(ctx context.Context, userId uint) (map[
 	return accounts, nil
 }
 
+// AccountOperation performs a deposit or withdrawal operation on a user's account.
+// It updates the account balance and returns the new balances of all accounts.
+// If the operation fails, it returns an error.
 func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountOperationRequest) (map[string]float32, error) {
 	op := "Database: account change"
 	log := db.log.With(slog.String("operation", op))
@@ -348,6 +362,9 @@ func (db *PostgresDB) AccountOperation(ctx context.Context, req *models.AccountO
 	return accounts, nil
 }
 
+// SaveExchangeRateChanges updates the balances of a user's accounts after a currency exchange.
+// It locks the accounts, updates the balances, and commits the transaction.
+// If the operation fails, it returns an error.
 func (db *PostgresDB) SaveExchangeRateChanges(ctx context.Context, newData *models.CurrencyExchangeResult) error {
 	op := "Database: updating of accounts on exchange"
 	log := db.log.With(slog.String("operation", op))
