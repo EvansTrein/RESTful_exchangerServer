@@ -30,7 +30,7 @@ Upon registration, the user is automatically created accounts in currencies (USD
 
 **Logger** - <u>slog</u>, but its own wrapper is written. 
 
-**Database** - <u>Postgres</u>, 3 tables. Users, currencies and accounts (one-to-one relationship, one user can have one account in each currency). The tables are created via migrations at server startup (we are talking about running in docker, there is a separate command to run migrations manually), using `github.com/golang-migrate/migrate/v4`. Currencies are added by a separate migration. When working with accounts, transactions and ACID are used so that the business logic is not broken.
+**Database** - <u>Postgres</u>, 3 tables. Users, currencies and accounts (one-to-many relationship, one user can have several accounts in each currency). The tables are created via migrations at server startup (we are talking about running in docker, there is a separate command to run migrations manually), using `github.com/golang-migrate/migrate/v4`. Currencies are added by a separate migration. When working with accounts, transactions and ACID are used so that the business logic is not broken.
 
 **gRPC server** - written by myself, `https://github.com/EvansTrein/gRPC_exchangerServer`. From it we get currency rates for exchange. The server's response is cached so that we don't have to go to it every time.
 
